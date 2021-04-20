@@ -1,0 +1,57 @@
+#pragma once
+#include <memory>
+
+#include "window.h"
+#include "device.h"
+#include "swapChain.h"
+#include "camera.h"
+#include "Events/otherEvents.hpp"
+#include "imguiLayer.h"
+
+namespace SnowEngine {
+    
+    class Application {
+    public:
+        Application();
+        ~Application();
+
+        inline static Application& Get() { return *app; }
+        inline bool ImguiEnabled() { return imguiLayer->IsEnabled(); }
+        //Starts the Update Render cycle
+        void Run();
+    public:
+        UpdateEvent OnUpdate{};
+
+    private:
+        //
+        void                BeginCommandBuffer(uint32_t i);
+        //
+        void                EndCommandBuffer(uint32_t i);
+        //
+        void                CreateCommandBuffers();
+        //
+        void                Draw(uint32_t frame);
+        //
+        uint32_t            GetFrame();
+        //
+        void                OnResize();
+        //
+        void                RecordCommandBuffer(uint32_t i);
+        //
+        void                Update(uint32_t frame);      
+        
+    private:
+        static Application* app;
+        
+        Window window{ 1920, 1080, "SnowEngine" };
+        Device device{ window };
+        std::unique_ptr<SwapChain> swapChain; 
+        Camera* camera;
+        Camera* cameraWire;
+        std::vector<VkCommandBuffer> commandBuffers;
+        ImGuiLayer* imguiLayer;
+        Light* light;
+
+        Model backPack{ device, "C:\\dev\\SnowEngine\\Engine\\resources\\models\\backpack\\scene.gltf" };
+    };
+}
