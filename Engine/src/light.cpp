@@ -8,8 +8,11 @@
 
 namespace SnowEngine {
 	Light::Light(Device& device) : device(device) {
-		ambientStrength = 1.0f;
-		color = glm::vec3(1.0f);
+
+	}
+
+	Light::~Light() {
+
 	}
 
 	void Light::SetColor(glm::vec3 color) {
@@ -22,14 +25,16 @@ namespace SnowEngine {
 	void Light::Draw(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, size_t imageIndex) {
 		auto push = model.GetPushConstant();
 		vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &push);
-		model.Draw(commandBuffer, pipelineLayout, imageIndex);
+		model.Draw(commandBuffer, imageIndex);
 	}
 
-	void Light::Update(uint32_t frame) {
-		if (ImGui::Begin("Light")) {
+	void Light::Update(uint32_t frame, glm::vec3 camPos) {
+		SetCameraPos(camPos);
+
+		if (ImGui::Begin("Ambient Light")) {
 			glm::vec3 color = { GetColor() };
 			float col[3] = { color.r, color.g, color.b };
-			ImGui::ColorPicker3("Color", col);
+			ImGui::ColorPicker3("Color", col, ImGuiColorEditFlags_PickerHueWheel);
 			color.r = col[0];
 			color.g = col[1];
 			color.b = col[2];
@@ -43,7 +48,6 @@ namespace SnowEngine {
 			position.z = pos[2];
 			SetPos(position);
 
-			SetCameraPos(this->pos);
 
 			float spec = GetSpecularStrength();
 			ImGui::SliderFloat("Specular strength", &spec, 0.0f, 1.0f);

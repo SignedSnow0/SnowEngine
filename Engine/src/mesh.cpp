@@ -29,8 +29,8 @@ namespace SnowEngine {
 	std::vector<VkDescriptorSetLayoutBinding> Mesh::GetLayoutBindings()
 	{
 		std::vector<VkDescriptorSetLayoutBinding> bindings;
-	/*	if(textures.size() > 0)
-			bindings.push_back(textures[0]->GetLayoutBinding());*/
+		//*if(textures.size() > 0)
+		//	bindings.push_back(textures[0]->GetLayoutBinding());*/
 		for (auto texture : textures)
 			bindings.push_back(texture->GetLayoutBinding());
 		return bindings;

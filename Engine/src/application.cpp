@@ -16,6 +16,8 @@ namespace SnowEngine {
     Application::Application() {
         app = this;
         OnResize();
+        camera = new Camera(device, glm::vec3(1.0f));
+        CreateGloalDescriptorSets();
 
         VkPushConstantRange pushConstant;
         pushConstant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
@@ -26,24 +28,23 @@ namespace SnowEngine {
         config = Pipeline::FillPipelineConfig();      
         config.renderPass = swapChain->GetRenderPass();
         config.pushConstant = pushConstant;
+        config.layouts.insert({ 0, globalDescriptorLayout });
         config.layouts.insert({ 1, backPack.GetDescriptorLayout() });
-        light = new Light(device);
-        camera = new Camera(device, glm::vec3(1.0f), config, light);
+        mappingPipeline = new Pipeline(device, config, "resources/shaders/spirv/base_shader.vert.spv", "resources/shaders/spirv/mapping_shader.frag.spv");
+        backPack.BindPipeline(mappingPipeline);
 
-        config.rasterizer.polygonMode = VK_POLYGON_MODE_LINE;
-        cameraWire = new Camera(device, glm::vec3(1.0f), config, light);
+        config.layouts[1] = light.GetModel()->GetDescriptorLayout();
+        basePipeline = new Pipeline(device, config, "resources/shaders/spirv/base_shader.vert.spv", "resources/shaders/spirv/base_shader.frag.spv");
+        light.GetModel()->BindPipeline(basePipeline);     
+
         CreateCommandBuffers();
-
         imguiLayer = new ImGuiLayer(window, device, *swapChain.get());
     }
 
     Application::~Application() {
-        delete light;
-
-        delete camera;
-        delete cameraWire;
-
         delete imguiLayer;
+
+        vkDestroyDescriptorSetLayout(device, globalDescriptorLayout, nullptr);
 
         glfwTerminate();
     }
@@ -88,7 +89,38 @@ namespace SnowEngine {
         transform *= glm::scale(glm::mat4(1.0f), glm::vec3(0.01f));
         backPack.SetPushConstant(transform);
 
-        light->Update(frame);
+        light.Update(frame, camera->GetPos());
+    }
+
+    void Application::CreateGloalDescriptorSets() {
+        std::vector<VkDescriptorSetLayoutBinding> bindings = { camera->GetLayoutBinding(), light.GetLayoutBinding() };
+
+        VkDescriptorSetLayoutCreateInfo createInfo{};
+        createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+        createInfo.bindingCount = static_cast<uint32_t>(bindings.size());
+        createInfo.pBindings = bindings.data();
+
+        if (vkCreateDescriptorSetLayout(device, &createInfo, nullptr, &globalDescriptorLayout))
+            throw std::runtime_error("Failed to create descriptor set layout!");
+
+        std::vector<VkDescriptorSetLayout> layouts(3, globalDescriptorLayout);
+        VkDescriptorSetAllocateInfo allocInfo{};
+        allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+        allocInfo.descriptorPool = device.GetDescriptorPool();
+        allocInfo.descriptorSetCount = static_cast<uint32_t>(3);
+        allocInfo.pSetLayouts = layouts.data();
+
+        globalDescriptorSets.resize(3);
+        if (vkAllocateDescriptorSets(device, &allocInfo, globalDescriptorSets.data()) != VK_SUCCESS)
+            throw std::runtime_error("Failed to allocate descriptor sets!");
+
+        for (size_t i = 0; i < 3; i++) {
+            std::vector<VkWriteDescriptorSet> descriptorWrites;
+            descriptorWrites.push_back(camera->GetDescriptorWrite(i, globalDescriptorSets[i]));
+            descriptorWrites.push_back(light.GetDescriptorWrite(i, globalDescriptorSets[i]));
+
+            vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+        }
     }
 
     void Application::Draw(uint32_t frame) {
@@ -101,7 +133,6 @@ namespace SnowEngine {
         if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || window.HasResized()) {
             auto extent = window.GetExtent();
             camera->SetWindowSize({ extent.width, extent.height });
-            cameraWire->SetWindowSize({ extent.width, extent.height });
             OnResize();
             return;
         }
@@ -130,7 +161,7 @@ namespace SnowEngine {
             throw std::runtime_error("Failed to begin recording command buffer!");
 
         std::array<VkClearValue, 2> clearValues;
-        clearValues[0].color        = {0.0f, 0.0f, 0.0f, 1.0f}; //color buffer
+        clearValues[0].color        = {0.49f, 0.25f, 0.0f, 1.0f}; //color buffer
         clearValues[1].depthStencil = { 1.0f, 0 }; //depth buffer
         
         VkRenderPassBeginInfo renderPassInfo{};
@@ -167,14 +198,9 @@ namespace SnowEngine {
     }
 
     void Application::RecordCommandBuffer(uint32_t i) {
-        if (imguiLayer->IsEnabled()) {
-            cameraWire->BindModel(&backPack);
-            cameraWire->Draw(commandBuffers[i], i);
-        }
-        else {
-            camera->BindModel(&backPack);
-            camera->Draw(commandBuffers[i], i);
-        }     
+        camera->BindModel(&backPack);
+        camera->BindModel(light.GetModel());
+        camera->Draw(commandBuffers[i], i, globalDescriptorSets[i]);     
     }
 
     void Application::OnResize() {

@@ -15,29 +15,24 @@ namespace SnowEngine {
 			glm::mat4 proj;
 		};
 	public:
-		Camera(Device& device, glm::vec3 pos, Pipeline::PipelineConfig& pipeline, Light* light);
+		Camera(Device& device, glm::vec3 pos);
 		~Camera();
 
 		inline void SetWindowSize(std::pair<float, float> size) { windowSize = size; }
-
+		inline glm::vec3 GetPos() { return pos; }
 		//Adds the model to the render queue, after a frame is rendered the queue is emptied
 		void BindModel(Model* model);
-		void BindLight(Light* light);
-		void Draw(VkCommandBuffer commandBuffer, size_t frameIndex);
+		void Draw(VkCommandBuffer commandBuffer, size_t frameIndex, VkDescriptorSet globalDescriptors);
 		bool Update(uint32_t frame, float deltaTime);
+		inline VkDescriptorSetLayoutBinding GetLayoutBinding() { return mvpBuffer.GetLayoutBinding(); }
+		inline VkWriteDescriptorSet GetDescriptorWrite(uint32_t i, VkDescriptorSet dstSet) { return mvpBuffer.CreateDescriptorWrite(i, dstSet); }
 
 	private:
-		void CreatePipeline(Pipeline::PipelineConfig& config);
-		void CreateDescriptorSet();
 
 	private:
 		Device& device;
-		Pipeline* pipeline;
-		std::vector<VkDescriptorSet> descriptorSets;
-		VkDescriptorSetLayout descriptorLayout;
 		
 		std::vector<Model*> models;
-		Light* light;
 
 		Ubo mvpMatrix{};
 		UniformBuffer<Ubo> mvpBuffer{ device, VK_SHADER_STAGE_VERTEX_BIT, 0, mvpMatrix, 3 };

@@ -1,11 +1,13 @@
 #include "texture.h"
+#include <filesystem>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
 namespace SnowEngine {
     Texture::Texture(Device& device, VkShaderStageFlags shaderTarget, uint32_t binding, const std::string& path, size_t swapchainImagesCount) : device(device), swapchainImagesCount(swapchainImagesCount), binding(binding), path(path) {
-        CreateTextureImage(path);
+        auto abs = std::filesystem::absolute(path);
+        CreateTextureImage(abs.string());
         CreateViewAndSampler();
         CreateBinding(shaderTarget, binding);
     }
@@ -21,16 +23,11 @@ namespace SnowEngine {
 
     void Texture::CreateTextureImage(const std::string& path) {
         int texWidth, texHeight, texChannels;
-        std::string abs = __FILE__;
-        for (size_t i = 0; i < 23; i++)
-            abs.pop_back();
-        abs += "resources\\models\\backpack\\";
-        abs += path;
-        stbi_uc* pixels = stbi_load(abs.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+        stbi_uc* pixels = stbi_load(path.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
         VkDeviceSize imageSize = texWidth * texHeight * 4;
 
         if (!pixels)
-            throw std::runtime_error("Failed to load texture image!");
+            throw std::runtime_error("Failed to load texture image! at " + path);
 
         VkBuffer stagingBuffer;
         VkDeviceMemory stagingBufferMemory;

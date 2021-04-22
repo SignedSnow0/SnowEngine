@@ -1,10 +1,12 @@
 #include "shader.h"
 #include <fstream>
+#include <filesystem>
 
 namespace SnowEngine
 {
     Shader::Shader(Device& device, const std::string& path, VkShaderStageFlagBits shaderType) : device(device) {
-        auto code = ReadFile(path);
+        auto abs = std::filesystem::absolute(path);
+        auto code = ReadFile(abs.string());
         CreateShaderModule(code);
         CreateShaderStage(shaderType);
     }

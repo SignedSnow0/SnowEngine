@@ -40,18 +40,23 @@ namespace SnowEngine {
         //
         void                Update(uint32_t frame);      
         
+        void CreateGloalDescriptorSets();
+
     private:
         static Application* app;
         
         Window window{ 1920, 1080, "SnowEngine" };
         Device device{ window };
         std::unique_ptr<SwapChain> swapChain; 
-        Camera* camera;
-        Camera* cameraWire;
         std::vector<VkCommandBuffer> commandBuffers;
         ImGuiLayer* imguiLayer;
-        Light* light;
+        Light light{ device };
+        Pipeline* basePipeline;
+        Pipeline* mappingPipeline;
+        Camera* camera;
+        Model backPack{ device, "resources/models/backpack/scene.gltf" };
 
-        Model backPack{ device, "C:\\dev\\SnowEngine\\Engine\\resources\\models\\backpack\\scene.gltf" };
+        std::vector<VkDescriptorSet> globalDescriptorSets;
+        VkDescriptorSetLayout globalDescriptorLayout;
     };
 }

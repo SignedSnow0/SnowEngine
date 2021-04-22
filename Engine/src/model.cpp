@@ -1,4 +1,5 @@
 #include "model.h"
+#include <filesystem>
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -7,11 +8,14 @@
 
 namespace SnowEngine {
     Model::Model(Device& device, const std::string& modelPath) : device(device) {
-        LoadModel(modelPath);
+        auto abs = std::filesystem::absolute(modelPath);
+        LoadModel(abs.string());
         CreateDescriptorSets();
     }
 
     Model::~Model() {
+        vkDestroyDescriptorSetLayout(device, descriptorLayout, nullptr);
+        
         for (auto texture : texturesLoaded)
             delete texture;
 
@@ -19,10 +23,10 @@ namespace SnowEngine {
             delete mesh;
     }
 
-    void Model::Draw(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, size_t imageIndex) {
+    void Model::Draw(VkCommandBuffer commandBuffer, size_t imageIndex) {
         for (auto mesh : meshes) {
             std::vector<VkDescriptorSet> sets = { GetDescriptorSet(imageIndex) };
-            vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 1, sets.size(), sets.data(), 0, nullptr);
+            vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->GetLayout(), 1, sets.size(), sets.data(), 0, nullptr);
             
             mesh->Draw(commandBuffer); 
         }
@@ -58,6 +62,7 @@ namespace SnowEngine {
     }
 
     void Model::LoadModel(const std::string& path) {
+        this->path = std::filesystem::absolute(path).remove_filename().string();
         Assimp::Importer importer;
         const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_JoinIdenticalVertices | aiProcess_PreTransformVertices);
         if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
@@ -117,11 +122,14 @@ namespace SnowEngine {
             aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
             std::vector<Texture*> diffuseMaps = LoadMaterialTextures(material, aiTextureType_DIFFUSE, "textureDiffuse");
             textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
+            std::vector<Texture*> normalMaps = LoadMaterialTextures(material, aiTextureType_SPECULAR, "textureSpecular");
+            textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
             std::vector<Texture*> specularMaps = LoadMaterialTextures(material, aiTextureType_NORMALS, "textureNormals");
             textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
         }
         if (textures.size() == 0)
-            textures.push_back(new Texture(device, VK_SHADER_STAGE_FRAGMENT_BIT, 0, "../../textures/white.png", 3));
+            textures.push_back(new Texture(device, VK_SHADER_STAGE_FRAGMENT_BIT, 0, "resources/textures/white.png", 3));
+
         return new Mesh{ device, vertices, indices, textures };
     }
 
@@ -143,8 +151,7 @@ namespace SnowEngine {
                 }
             }
             if (!skip) {
-                std::cout << str.C_Str() << " | " << typeName << std::endl;
-                Texture* texture = new Texture(device, VK_SHADER_STAGE_FRAGMENT_BIT, texturesLoaded.size(), str.C_Str(), 3);
+                Texture* texture = new Texture(device, VK_SHADER_STAGE_FRAGMENT_BIT, texturesLoaded.size(), path + str.C_Str(), 3);
                 textures.push_back(texture);
                 texturesLoaded.push_back(texture);
             }     

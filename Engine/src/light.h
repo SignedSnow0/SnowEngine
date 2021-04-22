@@ -1,5 +1,6 @@
 #pragma once
 #include <glm/glm.hpp>
+
 #include "Buffers/uniformBuffer.hpp"
 #include "model.h"
 
@@ -14,6 +15,7 @@ namespace SnowEngine {
 		};
 	public:
 		Light(Device& device);
+		~Light();
 
 		void SetCameraPos(glm::vec3 pos) { cameraPos = pos; }
 
@@ -29,11 +31,14 @@ namespace SnowEngine {
 		void SetSpecularStrength(float strenght) { specularStrength = strenght; }
 		inline float GetSpecularStrength() { return specularStrength; }
 
-		void Draw(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, size_t imageIndex);
-		void Update(uint32_t frame); 
+		inline Model* GetModel() { return &model; }
+
 		inline VkDescriptorSetLayoutBinding GetLayoutBinding() { return uBuffer.GetLayoutBinding(); }
 		inline VkWriteDescriptorSet GetDescriptorWrite(uint32_t i , VkDescriptorSet dstSet) { return uBuffer.CreateDescriptorWrite(i, dstSet); }
 		inline VkDescriptorSet GetModelDescriptorSet(uint32_t frameIndex) { return model.GetDescriptorSet(frameIndex); }
+
+		void Draw(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, size_t imageIndex);
+		void Update(uint32_t frame, glm::vec3 camPos);
 
 	private:
 
@@ -43,12 +48,12 @@ namespace SnowEngine {
 		LightUbo ubo;
 		UniformBuffer<LightUbo> uBuffer{ device, VK_SHADER_STAGE_FRAGMENT_BIT, 1, ubo, 3 };
 
-		glm::vec3 color;
+		glm::vec3 color = glm::vec3(1.0f);
 		float ambientStrength = 0.5f;
 		glm::vec3 pos = glm::vec3(2.0f);
 		glm::vec3 cameraPos;
 		float specularStrength = 0.5f;
 
-		Model model{ device, "C:\\dev\\SnowEngine\\Engine\\resources\\models\\sphere.obj" };
+		Model model{ device, "resources\\models\\sphere.obj" };
 	};
 }

@@ -27,7 +27,7 @@ namespace SnowEngine {
             VkPushConstantRange                     pushConstant;
         };
     public:
-        Pipeline(Device& device, PipelineConfig& pipelineFixedLayout);
+        Pipeline(Device& device, PipelineConfig& pipelineFixedLayout, std::string vertexPath, std::string fragmentPath);
         ~Pipeline();
 
         inline VkPipelineLayout GetLayout()     { return pipelineLayout; }
@@ -47,7 +47,7 @@ namespace SnowEngine {
         PipelineConfig      config;
         VkPipeline          pipeline;
 
-        Shader  vertexShader    { device, "C:\\dev\\SnowEngine\\Engine\\resources\\shaders\\spirv\\shader.vert.spv", VK_SHADER_STAGE_VERTEX_BIT };
-        Shader  fragmentShader  { device, "C:\\dev\\SnowEngine\\Engine\\resources\\shaders\\spirv\\shader.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT };       
+        Shader*  vertexShader;
+        Shader*  fragmentShader;
     };
 }

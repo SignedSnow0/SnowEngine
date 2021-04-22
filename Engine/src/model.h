@@ -8,6 +8,7 @@
 #include "device.h"
 #include "mesh.h"
 #include "Buffers/texture.h"
+#include "pipeline.h"
 
 namespace SnowEngine {
     class Model {
@@ -19,8 +20,10 @@ namespace SnowEngine {
         inline glm::mat4                GetPushConstant()                       { return pushConstant; }
         inline void                     SetPushConstant(glm::mat4 pushConstant) { this->pushConstant = pushConstant; }
         inline VkDescriptorSetLayout    GetDescriptorLayout()                   { return descriptorLayout; }
+        inline void BindPipeline(Pipeline* pipeline) { this->pipeline = pipeline; }
+        inline Pipeline* GetPipeline() { return pipeline; }
 
-        void Draw(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, size_t imageIndex);
+        void Draw(VkCommandBuffer commandBuffer, size_t imageIndex);
         
     private:
         void    CreateDescriptorSets();
@@ -31,12 +34,14 @@ namespace SnowEngine {
 
     private:
         Device& device;
+        Pipeline* pipeline;
 
         std::vector<Mesh*>                  meshes;
         std::vector<VkDescriptorSet>        descriptorSets;
         VkDescriptorSetLayout               descriptorLayout;
-        std::vector<Texture*> texturesLoaded;
+        std::vector<Texture*>               texturesLoaded;
         glm::mat4                           pushConstant;
         aiMatrix4x4 currentTransform{};
+        std::string path;
     };
 }

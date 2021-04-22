@@ -6,7 +6,9 @@
 
 namespace SnowEngine {
 
-    Pipeline::Pipeline(Device& device, PipelineConfig& config) : device(device), config(config) {
+    Pipeline::Pipeline(Device& device, PipelineConfig& config, std::string vertexPath, std::string fragmentPath) : device(device), config(config) {
+        vertexShader = new Shader(device, vertexPath, VK_SHADER_STAGE_VERTEX_BIT);
+        fragmentShader = new Shader(device, fragmentPath, VK_SHADER_STAGE_FRAGMENT_BIT);
         CreatePipelineLayout(config);
         CreatePipeline(config);
     }
@@ -18,7 +20,7 @@ namespace SnowEngine {
     }
     
     void Pipeline::CreatePipeline(PipelineConfig& config) {
-        VkPipelineShaderStageCreateInfo shaderStages[] = { vertexShader.GetShaderStage(), fragmentShader.GetShaderStage() };
+        VkPipelineShaderStageCreateInfo shaderStages[] = { vertexShader->GetShaderStage(), fragmentShader->GetShaderStage() };
 
         auto vertexBindingDescription       = VertexBuffer::GetBindingDescription();
         auto vertexAttributeDescriptions    = VertexBuffer::GetAttributeDescriptions();
