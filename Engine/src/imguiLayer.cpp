@@ -1,11 +1,12 @@
 #include "imguiLayer.h"
+#include <filesystem>
 
 #include <imguiLib/imgui_impl_vulkan.h>
 #include <imguiLib/imgui_impl_glfw.h>
+#include <ImGuizmo.h>
 
 #include "application.h"
 #include "input/keyboard.h"
-
 namespace SnowEngine {
 	ImGuiLayer::ImGuiLayer(Window& window, Device& device, SwapChain& swapchain) : window(window), device(device), swapchain(swapchain) {
 		Init();
@@ -30,10 +31,20 @@ namespace SnowEngine {
 		ImGui_ImplVulkan_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
-		if (ImGui::Begin("Statistics")) {
-			ImGui::Text("Frametime: %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-			ImGui::End();
+		ImGuizmo::BeginFrame();
+
+		ImGuiWindowFlags windowStyle = ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground;
+		bool open = true;
+		ImGui::SetNextWindowPos(ImVec2(0, 0));
+		ImGui::SetNextWindowSize(ImVec2(window.GetExtent().width, window.GetExtent().height));
+		if (ImGui::Begin("Dockspace", &open, windowStyle)) {
+
 		}
+		ImGui::End();
+
+		if (ImGui::Begin("Statistics"))
+			ImGui::Text("Frametime: %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+		ImGui::End();
 	}
 
 	void ImGuiLayer::EndFrame(VkCommandBuffer commandBuffer) {
@@ -48,7 +59,11 @@ namespace SnowEngine {
 		ImGuiIO& io = ImGui::GetIO();
 		io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+
+		auto abs = std::filesystem::absolute("resources/fonts/Roboto/Roboto-Bold.ttf");
+		io.Fonts->AddFontFromFileTTF(abs.string().c_str(), 18.0f);
+		abs = std::filesystem::absolute("resources/fonts/Roboto/Roboto-Regular.ttf");
+		io.FontDefault = io.Fonts->AddFontFromFileTTF(abs.string().c_str(), 15.0f);
 		ImGui::StyleColorsDark();
 
 		ImGui_ImplGlfw_InitForVulkan(window.GetGLFW(), true);

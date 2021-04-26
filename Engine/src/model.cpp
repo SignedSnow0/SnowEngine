@@ -6,27 +6,44 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+#include "application.h"
+
 namespace SnowEngine {
     Model::Model(Device& device, const std::string& modelPath) : device(device) {
         auto abs = std::filesystem::absolute(modelPath);
+        name = abs.filename().string();
+        std::stringstream ss;
+        ss.str(name);
+        std::getline(ss, name, '.');
         LoadModel(abs.string());
         CreateDescriptorSets();
+        Update();
     }
 
     Model::~Model() {
-        vkDestroyDescriptorSetLayout(device, descriptorLayout, nullptr);
-        
-        for (auto texture : texturesLoaded)
-            delete texture;
+        vkDestroyDescriptorSetLayout(device, descriptorLayout, nullptr);    
 
         for (auto mesh : meshes)
             delete mesh;
     }
 
-    void Model::Draw(VkCommandBuffer commandBuffer, size_t imageIndex) {
+    void Model::Update() {
+        pushConstant = glm::scale(glm::mat4(1.0f), scale);
+        pushConstant *= glm::rotate(glm::mat4(1.0f), rotation.x, glm::vec3(1.0f, 0.0f, 0.0f));
+        pushConstant *= glm::rotate(glm::mat4(1.0f), rotation.y, glm::vec3(0.0f, 1.0f, 0.0f));
+        pushConstant *= glm::rotate(glm::mat4(1.0f), rotation.z, glm::vec3(0.0f, 0.0f, 1.0f));
+        pushConstant *= glm::translate(glm::mat4(1.0f), translation);    
+    }
+
+    void Model::Draw(VkCommandBuffer commandBuffer, size_t imageIndex, VkPipelineLayout layout) {
+        std::vector<VkDescriptorSet> sets = { GetDescriptorSet(imageIndex) };
+        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 1, sets.size(), sets.data(), 0, nullptr);
+
+        
+
         for (auto mesh : meshes) {
             std::vector<VkDescriptorSet> sets = { GetDescriptorSet(imageIndex) };
-            vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->GetLayout(), 1, sets.size(), sets.data(), 0, nullptr);
+            vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 1, sets.size(), sets.data(), 0, nullptr);
             
             mesh->Draw(commandBuffer); 
         }

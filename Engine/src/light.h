@@ -17,15 +17,15 @@ namespace SnowEngine {
 		Light(Device& device);
 		~Light();
 
-		void SetCameraPos(glm::vec3 pos) { cameraPos = pos; }
+		inline void SetCameraPos(glm::vec3 pos) { cameraPos = pos; }
 
-		void SetPos(glm::vec3 pos) { this->pos = pos; }
+		inline void SetPos(glm::vec3 pos) { this->pos = pos; }
 		inline glm::vec3 GetPos() { return pos; }
 
-		void SetColor(glm::vec3 color);
+		inline void SetColor(glm::vec3 color) { this->color = color; }
 		inline glm::vec3 GetColor() { return color; }
 
-		void SetAmbientStrength(float strenght);
+		inline void SetAmbientStrength(float strenght) { ambientStrength = strenght; }
 		inline float GetAmbientStrength() { return ambientStrength; }
 
 		void SetSpecularStrength(float strenght) { specularStrength = strenght; }
@@ -51,7 +51,7 @@ namespace SnowEngine {
 		glm::vec3 color = glm::vec3(1.0f);
 		float ambientStrength = 0.5f;
 		glm::vec3 pos = glm::vec3(2.0f);
-		glm::vec3 cameraPos;
+		glm::vec3 cameraPos = glm::vec3(0.0f);
 		float specularStrength = 0.5f;
 
 		Model model{ device, "resources\\models\\sphere.obj" };

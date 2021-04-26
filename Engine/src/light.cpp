@@ -15,17 +15,10 @@ namespace SnowEngine {
 
 	}
 
-	void Light::SetColor(glm::vec3 color) {
-		this->color = color;
-	}
-
-	void Light::SetAmbientStrength(float strenght) {
-		ambientStrength = strenght;
-	}
 	void Light::Draw(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, size_t imageIndex) {
 		auto push = model.GetPushConstant();
 		vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &push);
-		model.Draw(commandBuffer, imageIndex);
+		//model.Draw(commandBuffer, imageIndex);
 	}
 
 	void Light::Update(uint32_t frame, glm::vec3 camPos) {
@@ -42,12 +35,12 @@ namespace SnowEngine {
 
 			glm::vec3 position = { GetPos() };
 			float pos[3] = { position.x, position.y, position.z };
-			ImGui::SliderFloat3("Position", pos, -10.0f, 10.0f);
+			ImGui::SliderFloat3("Position", pos, -50.0f, 50.0f);
 			position.x = pos[0];
 			position.y = pos[1];
 			position.z = pos[2];
 			SetPos(position);
-
+			model.SetTranslation(position);
 
 			float spec = GetSpecularStrength();
 			ImGui::SliderFloat("Specular strength", &spec, 0.0f, 1.0f);
@@ -55,16 +48,12 @@ namespace SnowEngine {
 
 			float ambient = GetAmbientStrength();
 			ImGui::SliderFloat("Ambient strength", &ambient, 0.0f, 1.0f);
-			SetAmbientStrength(ambient);
-
-			ImGui::End();
+			SetAmbientStrength(ambient);		
 		}
+		ImGui::End();
+		uBuffer.Update(frame, { color, ambientStrength, pos, cameraPos, specularStrength });
 
-		glm::vec3 rightPos = glm::vec3(-pos.x, pos.y, -pos.z);
-		uBuffer.Update(frame, { color, ambientStrength, rightPos, cameraPos, specularStrength });
-
-		glm::mat4 push = glm::translate(glm::mat4(1.0f), pos);
-		push *= glm::scale(glm::mat4(1.0f), glm::vec3(0.1f));
-		model.SetPushConstant(push);
+		model.SetScale(glm::vec3(0.5f));
+		model.Update();
 	}
 }

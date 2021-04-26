@@ -18,13 +18,20 @@ namespace SnowEngine {
 
         inline VkDescriptorSet          GetDescriptorSet(uint32_t frame)        { return descriptorSets[frame]; }
         inline glm::mat4                GetPushConstant()                       { return pushConstant; }
-        inline void                     SetPushConstant(glm::mat4 pushConstant) { this->pushConstant = pushConstant; }
+        void                            Update();
         inline VkDescriptorSetLayout    GetDescriptorLayout()                   { return descriptorLayout; }
-        inline void BindPipeline(Pipeline* pipeline) { this->pipeline = pipeline; }
-        inline Pipeline* GetPipeline() { return pipeline; }
 
-        void Draw(VkCommandBuffer commandBuffer, size_t imageIndex);
-        
+        inline glm::vec3    GetScale()                              { return scale; }
+        inline glm::vec3    GetRotation()                           { return rotation; }
+        inline glm::vec3    GetTranslation()                        { return translation; }
+        inline void         SetScale(glm::vec3 scale)               { this->scale = scale; }
+        inline void         SetRotation(glm::vec3 rotation)         { this->rotation = rotation; }
+        inline void         SetTranslation(glm::vec3 translation)   { this->translation = translation; }
+
+        inline std::string GetName() { return name; }
+
+        void Draw(VkCommandBuffer commandBuffer, size_t imageIndex, VkPipelineLayout layout);
+
     private:
         void    CreateDescriptorSets();
         void    LoadModel(const std::string& path);
@@ -34,7 +41,11 @@ namespace SnowEngine {
 
     private:
         Device& device;
-        Pipeline* pipeline;
+        std::string name;
+
+        glm::vec3 translation = glm::vec3(1.0f);
+        glm::vec3 rotation = glm::vec3(3.1415f);
+        glm::vec3 scale = glm::vec3(0.01f);
 
         std::vector<Mesh*>                  meshes;
         std::vector<VkDescriptorSet>        descriptorSets;

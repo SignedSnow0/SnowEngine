@@ -20,19 +20,13 @@ namespace SnowEngine {
 
 	void Camera::Draw(VkCommandBuffer commandBuffer, size_t frameIndex, VkDescriptorSet globalDescriptor) {
 		for (auto model : models) {
-			assert(model->GetPipeline() != nullptr && "Model must have a pipeline bound before drawing!");
+			//assert(model->GetPipeline() != nullptr && "Model must have a pipeline bound before drawing!");
 
-			vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, model->GetPipeline()->GetPipeline());
+			//vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, model->GetPipeline()->GetPipeline());
 
-			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, model->GetPipeline()->GetLayout(), 0, 1, &globalDescriptor, 0, nullptr);
+			//vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, model->GetPipeline()->GetLayout(), 0, 1, &globalDescriptor, 0, nullptr);
 
-			std::vector<VkDescriptorSet> sets = { model->GetDescriptorSet(frameIndex) };
-			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, model->GetPipeline()->GetLayout(), 1, sets.size(), sets.data(), 0, nullptr);
-
-			glm::mat4 pushConstant = model->GetPushConstant();
-			vkCmdPushConstants(commandBuffer, model->GetPipeline()->GetLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &pushConstant);
-
-			model->Draw(commandBuffer, frameIndex);
+			//model->Draw(commandBuffer, frameIndex);
 		}
 
 		models.clear();

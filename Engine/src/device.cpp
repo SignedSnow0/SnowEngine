@@ -6,6 +6,7 @@
 #include <set>
 #include <array>
 namespace SnowEngine {
+	Device* Device::currentDevice = nullptr;
 
     static const std::vector<const char*> validationLayers = {
 		"VK_LAYER_KHRONOS_validation"
@@ -45,6 +46,8 @@ namespace SnowEngine {
 		CreateLogicalDevice();
 		CreateCommandPool();
 		CreateDescriptorPool();
+
+		currentDevice = this;
 	}
 
 	Device::~Device() {

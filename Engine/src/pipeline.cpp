@@ -14,6 +14,9 @@ namespace SnowEngine {
     }
 
     Pipeline::~Pipeline() {
+        delete vertexShader;
+        delete fragmentShader;
+
         vkDestroyPipeline(device, pipeline, nullptr);
 
         vkDestroyPipelineLayout(device, pipelineLayout, nullptr);

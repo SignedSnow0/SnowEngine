@@ -15,14 +15,15 @@ namespace SnowEngine {
             VkPipelineMultisampleStateCreateInfo    multisampling       {};
             //Descrive un insime di operazioni possibili per modificare il colore di un pixel a seconda delle sue caratteristiche
             VkPipelineColorBlendStateCreateInfo     colorBlending       {};
+            //Informazioni riguardo l`alrea di rendering nella finestra
             VkPipelineViewportStateCreateInfo       viewportInfo        {};
             VkPipelineColorBlendAttachmentState     colorBlendAttachment{};
             VkPipelineDepthStencilStateCreateInfo   depthStencil        {};
-            
+			uint32_t                                subpass = 0;
+			std::vector<VkDynamicState>             dynamicStates;
+
             VkRenderPass                            renderPass          = nullptr;
-            //VkPipelineLayout                        pipelineLayout      = nullptr;
-            uint32_t                                subpass             = 0;
-            std::vector<VkDynamicState>             dynamicStates;
+            //Pair of destriptor layout and its order in shader bindings
             std::map<int, VkDescriptorSetLayout>    layouts;
             VkPushConstantRange                     pushConstant;
         };
@@ -32,7 +33,7 @@ namespace SnowEngine {
 
         inline VkPipelineLayout GetLayout()     { return pipelineLayout; }
         inline VkPipeline       GetPipeline()   { return pipeline; }
-
+        inline PipelineConfig GetConfig() { return config; }
         //Fills the PipelineConfig struct
         static PipelineConfig FillPipelineConfig();
 

@@ -28,6 +28,7 @@ namespace SnowEngine {
 		//Returns the VkDevice
 		inline operator VkDevice() { return GetDevice(); }
 
+		inline static Device& Get() { return *currentDevice; }
 		inline VkInstance					GetInstance()			{ return instance; }
 		inline VkPhysicalDevice				GetPhysicalDevice()		{ return physicalDevice; }
 		//Returns the area of memory where commadBuffers are stored
@@ -100,6 +101,8 @@ namespace SnowEngine {
 		void						SetupValidationCallbacks();	
 		
 	private:
+		static Device* currentDevice;
+
 		Window& window;
 		
 		VkCommandPool				commandPool;

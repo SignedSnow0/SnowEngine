@@ -12,3 +12,6 @@
 	path = Engine/external/imgui
 	url = https://github.com/ocornut/imgui.git
 	branch = docking
+[submodule "Engine/external/imguizmo"]
+	path = Engine/external/imguizmo
+	url = https://github.com/CedricGuillemet/ImGuizmo.git

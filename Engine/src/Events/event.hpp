@@ -6,7 +6,7 @@
 namespace SnowEngine
 {
     enum class EventType {
-        Key, Mouse, FileDrop, Update
+        Key, Mouse, FileDrop, Update, Component
     };
 
     template<typename ... TArgs>

@@ -89,7 +89,7 @@ namespace SnowEngine
         VkDeviceMemory bufferMemory;
     };
 
-    class VertexBuffer : Buffer<Vertex> {
+    class VertexBuffer : public Buffer<Vertex> {
     public:
         VertexBuffer(Device& device, const std::vector<Vertex>& vertices) : Buffer(device, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, vertices), vertexCount(vertices.size()) { }
         ~VertexBuffer() { }
@@ -97,7 +97,7 @@ namespace SnowEngine
         inline uint32_t GetVertexCount() { return vertexCount; }
 
         //Binds the current buffer (to use in commandbuffer recording)
-        virtual void Bind(VkCommandBuffer commandBuffer) override {
+        inline virtual void Bind(VkCommandBuffer commandBuffer) override {
             VkDeviceSize offsets[] = { 0 };
             vkCmdBindVertexBuffers(commandBuffer, 0, 1, &buffer, offsets);
         }
@@ -136,7 +136,7 @@ namespace SnowEngine
         uint32_t vertexCount;
     };
 
-    class IndexBuffer : Buffer<uint16_t> {
+    class IndexBuffer : public Buffer<uint16_t> {
     public:
         IndexBuffer(Device& device, const std::vector<uint16_t>& indices) : Buffer(device, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, indices), indexCount(indices.size()) { }
         ~IndexBuffer() { }
@@ -144,9 +144,7 @@ namespace SnowEngine
         inline uint32_t GetIndexCount() { return indexCount; }
 
         //Binds the current buffer (to use in commandbuffer recording)
-        virtual void Bind(VkCommandBuffer commandBuffer) override {
-            vkCmdBindIndexBuffer(commandBuffer, buffer, 0, VK_INDEX_TYPE_UINT16);
-        }
+        inline virtual void Bind(VkCommandBuffer commandBuffer) override { vkCmdBindIndexBuffer(commandBuffer, buffer, 0, VK_INDEX_TYPE_UINT16); }
         
         static VkVertexInputBindingDescription GetBindingDescription() {
             VkVertexInputBindingDescription description{};

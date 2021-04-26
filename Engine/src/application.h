@@ -4,9 +4,10 @@
 #include "window.h"
 #include "device.h"
 #include "swapChain.h"
-#include "camera.h"
+#include "Camera/camera.h"
 #include "Events/otherEvents.hpp"
 #include "imguiLayer.h"
+#include "Ecs/scene.h"
 
 namespace SnowEngine {
     
@@ -38,7 +39,7 @@ namespace SnowEngine {
         //
         void                RecordCommandBuffer(uint32_t i);
         //
-        void                Update(uint32_t frame);      
+        bool                Update(uint32_t frame, float deltaTime);
         
         void CreateGloalDescriptorSets();
 
@@ -47,16 +48,20 @@ namespace SnowEngine {
         
         Window window{ 1920, 1080, "SnowEngine" };
         Device device{ window };
-        std::unique_ptr<SwapChain> swapChain; 
+        std::unique_ptr<SwapChain> swapChain;
         std::vector<VkCommandBuffer> commandBuffers;
         ImGuiLayer* imguiLayer;
         Light light{ device };
         Pipeline* basePipeline;
         Pipeline* mappingPipeline;
         Camera* camera;
-        Model backPack{ device, "resources/models/backpack/scene.gltf" };
+        std::vector<Model*> entities;
 
         std::vector<VkDescriptorSet> globalDescriptorSets;
         VkDescriptorSetLayout globalDescriptorLayout;
+        Scene* scene;
+        VkPushConstantRange pushConstant;
+
+        friend class Scene;
     };
 }
