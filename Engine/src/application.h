@@ -42,6 +42,7 @@ namespace SnowEngine {
         bool                Update(uint32_t frame, float deltaTime);
         
         void CreateGloalDescriptorSets();
+        Pipeline* GetPipeline() { return pipeline; }
 
     private:
         static Application* app;
@@ -52,10 +53,9 @@ namespace SnowEngine {
         std::vector<VkCommandBuffer> commandBuffers;
         ImGuiLayer* imguiLayer;
         Light light{ device };
-        Pipeline* basePipeline;
-        Pipeline* mappingPipeline;
+        Pipeline* pipeline;
         Camera* camera;
-        std::vector<Model*> entities;
+        Model startingEntity{ device, "resources/models/sphere.obj" };
 
         std::vector<VkDescriptorSet> globalDescriptorSets;
         VkDescriptorSetLayout globalDescriptorLayout;

@@ -16,9 +16,7 @@ namespace SnowEngine {
         Model(Device& device, const std::string& modelPath);
         ~Model();
 
-        inline VkDescriptorSet          GetDescriptorSet(uint32_t frame)        { return descriptorSets[frame]; }
         inline glm::mat4                GetPushConstant()                       { return pushConstant; }
-        void                            Update();
         inline VkDescriptorSetLayout    GetDescriptorLayout()                   { return descriptorLayout; }
 
         inline glm::vec3    GetScale()                              { return scale; }
@@ -37,7 +35,7 @@ namespace SnowEngine {
         void    LoadModel(const std::string& path);
         void    ProcessNode(aiNode* node, const aiScene* scene);
         Mesh*   ProcessMesh(aiMesh* mesh, const aiScene* scene, aiNode* node);
-        std::vector<Texture*> LoadMaterialTextures(aiMaterial* mat, aiTextureType type, const std::string typeName);
+        std::vector<Texture*> LoadMaterialTextures(aiMaterial* mat, aiTextureType type, const std::string typeName, uint32_t binding);
 
     private:
         Device& device;
@@ -48,7 +46,6 @@ namespace SnowEngine {
         glm::vec3 scale = glm::vec3(0.01f);
 
         std::vector<Mesh*>                  meshes;
-        std::vector<VkDescriptorSet>        descriptorSets;
         VkDescriptorSetLayout               descriptorLayout;
         std::vector<Texture*>               texturesLoaded;
         glm::mat4                           pushConstant;

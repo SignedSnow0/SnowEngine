@@ -172,32 +172,18 @@ namespace SnowEngine {
 
 	void Scene::Draw(uint32_t frame, VkCommandBuffer buffer) {
 		auto view = m_registry.view<ModelComponent, TransformComponent>(); //tutte le entità con un modelcomponent
-
+		Pipeline* pipeline = Application::Get().GetPipeline();
 		for (auto entity : view) {
 			bool found = false;
 			auto model = view.get<ModelComponent>(entity); //ottengo il component di una specifica entità
-			if (model.model != nullptr) {
-				for (Pipeline* pipeline : pipelines) {
-					if (pipeline->GetConfig().layouts[1] == model.model->GetDescriptorLayout()) {
-						vkCmdBindPipeline(buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->GetPipeline());
+			if (model.model != nullptr) {		
+				vkCmdBindPipeline(buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->GetPipeline());
 
-						glm::mat4 transform = view.get<TransformComponent>(entity);
-						vkCmdPushConstants(buffer, pipeline->GetLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &transform);
-						vkCmdBindDescriptorSets(buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->GetLayout(), 0, 1, &Application::Get().globalDescriptorSets[frame], 0, nullptr);//todo create descriptors in scene
+				glm::mat4 transform = view.get<TransformComponent>(entity);
+				vkCmdPushConstants(buffer, pipeline->GetLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &transform);
+				vkCmdBindDescriptorSets(buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->GetLayout(), 0, 1, &Application::Get().globalDescriptorSets[frame], 0, nullptr);//todo create descriptors in scene
 
-						model.model->Draw(buffer, frame, pipeline->GetLayout());
-						found = true;
-					}
-				}
-				if (!found) {
-					Pipeline::PipelineConfig pipConfig = Pipeline::FillPipelineConfig();
-					pipConfig.renderPass = Application::Get().swapChain->GetRenderPass();
-					pipConfig.pushConstant = Application::Get().pushConstant;
-					pipConfig.layouts.insert({ 0, Application::Get().globalDescriptorLayout });
-					pipConfig.layouts.insert({ 1, model.model->GetDescriptorLayout() });
-
-					pipelines.push_back(new Pipeline(Device::Get(), pipConfig, "resources/shaders/spirv/base_shader.vert.spv", "resources/shaders/spirv/mapping_shader.frag.spv"));
-				}
+				model.model->Draw(buffer, frame, pipeline->GetLayout());			
 			}	
 		}
 	}

@@ -24,8 +24,6 @@ namespace SnowEngine {
         camera = new Camera(device, glm::vec3(1.0f));
         CreateGloalDescriptorSets();
 
-        entities.push_back(new Model(device, "resources/models/backpack/backpack.gltf"));
-
         pushConstant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
         pushConstant.offset = 0;
         pushConstant.size = sizeof(glm::mat4);
@@ -35,13 +33,8 @@ namespace SnowEngine {
         config.renderPass = swapChain->GetRenderPass();
         config.pushConstant = pushConstant;
         config.layouts.insert({ 0, globalDescriptorLayout });
-        config.layouts.insert({ 1, entities[0]->GetDescriptorLayout() });
-        mappingPipeline = new Pipeline(device, config, "resources/shaders/spirv/base_shader.vert.spv", "resources/shaders/spirv/mapping_shader.frag.spv");
-        //entities[0]->BindPipeline(mappingPipeline);
-
-        config.layouts[1] = light.GetModel()->GetDescriptorLayout();
-        basePipeline = new Pipeline(device, config, "resources/shaders/spirv/base_shader.vert.spv", "resources/shaders/spirv/base_shader.frag.spv");
-        //light.GetModel()->BindPipeline(basePipeline);     
+        config.layouts.insert({ 1, startingEntity.GetDescriptorLayout() });
+        pipeline = new Pipeline(device, config, "resources/shaders/spirv/base_shader.vert.spv", "resources/shaders/spirv/mapping_shader.frag.spv");
 
         CreateCommandBuffers();
         imguiLayer = new ImGuiLayer(window, device, *swapChain.get());
@@ -49,17 +42,13 @@ namespace SnowEngine {
         OnUpdate += std::bind(&Application::Update, this, std::placeholders::_1, std::placeholders::_2);
 
         Entity entity = scene->CreateEntity("Backpack");
-        entity.AddComponent<ModelComponent>(entities[0]);
+        entity.AddComponent<ModelComponent>(&startingEntity);
     }
 
     Application::~Application() {
         delete imguiLayer;
 
-        delete basePipeline;
-        delete mappingPipeline;
-
-        for (auto model : entities)
-            delete model;
+        delete pipeline;
 
         vkDestroyDescriptorSetLayout(device, globalDescriptorLayout, nullptr);
 
@@ -102,23 +91,6 @@ namespace SnowEngine {
     bool Application::Update(uint32_t frame, float deltaTime) {
         light.Update(frame, camera->GetPos());
 
-        if (ImGui::Begin("Models")) {
-            if (ImGui::Button("Load Model")) { //Premuto sul bottone
-                nfdpathset_t resPath;
-                nfdresult_t result = NFD_OpenDialogMultiple("obj,gltf", nullptr, &resPath);          
-                if (result == NFD_OKAY) {
-                    for (size_t i = 0; i < NFD_PathSet_GetCount(&resPath); ++i) {
-                        nfdchar_t* path = NFD_PathSet_GetPath(&resPath, i);
-                        Model* tmp = new Model(device, path);
-                        //tmp->BindPipeline(basePipeline);
-                        entities.push_back(tmp);
-                    }
-                    NFD_PathSet_Free(&resPath);
-                }
-            }     
-        }
-        ImGui::End();
-
         return true;
     }
 
@@ -155,8 +127,9 @@ namespace SnowEngine {
 
     void Application::Draw(uint32_t frame) {
         BeginCommandBuffer(frame);
-        //RecordCommandBuffer(frame);
-        scene->Draw(frame, commandBuffers[frame]);
+
+        RecordCommandBuffer(frame);
+     
         imguiLayer->EndFrame(commandBuffers[frame]);
         EndCommandBuffer(frame);
 
@@ -229,11 +202,7 @@ namespace SnowEngine {
     }
 
     void Application::RecordCommandBuffer(uint32_t i) {
-        //for (Model* entity : entities) {
-            //camera->BindModel(entity);
-        //}
-        //camera->BindModel(light.GetModel());
-        //camera->Draw(commandBuffers[i], i, globalDescriptorSets[i]);     
+        scene->Draw(i, commandBuffers[i]);
     }
 
     void Application::OnResize() {

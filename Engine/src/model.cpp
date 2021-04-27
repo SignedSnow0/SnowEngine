@@ -17,7 +17,6 @@ namespace SnowEngine {
         std::getline(ss, name, '.');
         LoadModel(abs.string());
         CreateDescriptorSets();
-        Update();
     }
 
     Model::~Model() {
@@ -27,22 +26,9 @@ namespace SnowEngine {
             delete mesh;
     }
 
-    void Model::Update() {
-        pushConstant = glm::scale(glm::mat4(1.0f), scale);
-        pushConstant *= glm::rotate(glm::mat4(1.0f), rotation.x, glm::vec3(1.0f, 0.0f, 0.0f));
-        pushConstant *= glm::rotate(glm::mat4(1.0f), rotation.y, glm::vec3(0.0f, 1.0f, 0.0f));
-        pushConstant *= glm::rotate(glm::mat4(1.0f), rotation.z, glm::vec3(0.0f, 0.0f, 1.0f));
-        pushConstant *= glm::translate(glm::mat4(1.0f), translation);    
-    }
-
     void Model::Draw(VkCommandBuffer commandBuffer, size_t imageIndex, VkPipelineLayout layout) {
-        std::vector<VkDescriptorSet> sets = { GetDescriptorSet(imageIndex) };
-        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 1, sets.size(), sets.data(), 0, nullptr);
-
-        
-
         for (auto mesh : meshes) {
-            std::vector<VkDescriptorSet> sets = { GetDescriptorSet(imageIndex) };
+            std::vector<VkDescriptorSet> sets = { mesh->GetDescriptorSet(imageIndex) };
             vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 1, sets.size(), sets.data(), 0, nullptr);
             
             mesh->Draw(commandBuffer); 
@@ -60,21 +46,8 @@ namespace SnowEngine {
         if (vkCreateDescriptorSetLayout(device.GetDevice(), &layoutInfo, nullptr, &descriptorLayout) != VK_SUCCESS)
             throw std::runtime_error("Failed to create descriptor set layout!");
 
-        std::vector<VkDescriptorSetLayout> layouts(3, descriptorLayout);
-
-        VkDescriptorSetAllocateInfo allocInfo{};
-        allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-        allocInfo.descriptorPool = device.GetDescriptorPool();
-        allocInfo.descriptorSetCount = static_cast<uint32_t>(layouts.size());
-        allocInfo.pSetLayouts = layouts.data();
-
-        descriptorSets.resize(3);
-        if (vkAllocateDescriptorSets(device, &allocInfo, descriptorSets.data()) != VK_SUCCESS)
-            throw std::runtime_error("Failed to allocate descriptor sets!");
-
-        for (size_t i = 0; i < 3; i++) {
-            std::vector<VkWriteDescriptorSet> descriptorWrites = { meshes[0]->GetDescriptorWrites(descriptorSets[i]) };
-            vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+        for (Mesh* mesh : meshes) {
+            mesh->CreateDescriptorSet(descriptorLayout);
         }
     }
 
@@ -137,21 +110,28 @@ namespace SnowEngine {
         if (mesh->mMaterialIndex >= 0)
         {
             aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
-            std::vector<Texture*> diffuseMaps = LoadMaterialTextures(material, aiTextureType_DIFFUSE, "textureDiffuse");
+
+            std::vector<Texture*> diffuseMaps = LoadMaterialTextures(material, aiTextureType_DIFFUSE, "textureDiffuse", 0);
+            if(diffuseMaps.size() == 0)
+                textures.push_back(new Texture(device, VK_SHADER_STAGE_FRAGMENT_BIT, 0, "resources/textures/white.png", 3));
             textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
-            std::vector<Texture*> normalMaps = LoadMaterialTextures(material, aiTextureType_SPECULAR, "textureSpecular");
-            textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
-            std::vector<Texture*> specularMaps = LoadMaterialTextures(material, aiTextureType_NORMALS, "textureNormals");
+
+            std::vector<Texture*> specularMaps = LoadMaterialTextures(material, aiTextureType_SPECULAR, "textureSpecular", 1);
+			if (specularMaps.size() == 0)
+				textures.push_back(new Texture(device, VK_SHADER_STAGE_FRAGMENT_BIT, 1, "resources/textures/white.png", 3));
             textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
+
+            std::vector<Texture*> normalMaps = LoadMaterialTextures(material, aiTextureType_NORMALS, "textureNormals", 2);
+			if (normalMaps.size() == 0)
+				textures.push_back(new Texture(device, VK_SHADER_STAGE_FRAGMENT_BIT, 2, "resources/textures/white.png", 3));
+            textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
         }
-        if (textures.size() == 0)
-            textures.push_back(new Texture(device, VK_SHADER_STAGE_FRAGMENT_BIT, 0, "resources/textures/white.png", 3));
 
         return new Mesh{ device, vertices, indices, textures };
     }
 
 
-    std::vector<Texture*> Model::LoadMaterialTextures(aiMaterial* mat, aiTextureType type, const std::string typeName)
+    std::vector<Texture*> Model::LoadMaterialTextures(aiMaterial* mat, aiTextureType type, const std::string typeName, uint32_t binding)
     {
         std::vector<Texture*> textures;
         for (unsigned int i = 0; i < mat->GetTextureCount(type); i++)
@@ -168,11 +148,11 @@ namespace SnowEngine {
                 }
             }
             if (!skip) {
-                Texture* texture = new Texture(device, VK_SHADER_STAGE_FRAGMENT_BIT, texturesLoaded.size(), path + str.C_Str(), 3);
+                Texture* texture = new Texture(device, VK_SHADER_STAGE_FRAGMENT_BIT, binding, path + str.C_Str(), 3);
                 textures.push_back(texture);
                 texturesLoaded.push_back(texture);
-            }     
-        }
-        return textures;
+            }    
+            return textures;
+        }     
     }
 }

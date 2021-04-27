@@ -54,6 +54,5 @@ namespace SnowEngine {
 		uBuffer.Update(frame, { color, ambientStrength, pos, cameraPos, specularStrength });
 
 		model.SetScale(glm::vec3(0.5f));
-		model.Update();
 	}
 }

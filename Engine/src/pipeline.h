@@ -31,6 +31,9 @@ namespace SnowEngine {
         Pipeline(Device& device, PipelineConfig& pipelineFixedLayout, std::string vertexPath, std::string fragmentPath);
         ~Pipeline();
 
+		inline operator VkPipeline() { return pipeline; }
+		inline operator VkPipelineLayout() { return pipelineLayout; }
+
         inline VkPipelineLayout GetLayout()     { return pipelineLayout; }
         inline VkPipeline       GetPipeline()   { return pipeline; }
         inline PipelineConfig GetConfig() { return config; }
