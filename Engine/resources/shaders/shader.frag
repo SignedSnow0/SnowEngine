@@ -23,7 +23,7 @@ layout(set = 1, binding = 0) uniform ProcessingFlags {
 } flags;
 
 layout(set = 1, binding = 1) uniform sampler2D albedo;
-layout(set = 1, binding = 2) uniform sampler2D diffuse;
+layout(set = 1, binding = 2) uniform sampler2D specularMap;
 layout(set = 1, binding = 3) uniform sampler2D normal;
 
 vec3 CalcPhongLight() {
@@ -38,7 +38,7 @@ vec3 CalcPhongLight() {
 	vec3 viewDir = normalize(light.cameraPos - fragPos);
 	vec3 reflectDir = reflect(-lightDir, norm);
 	float spec = pow(max(dot(viewDir, reflectDir), 0.0), 64);
-	vec3 specular = light.specularStrength * spec * light.color;
+	vec3 specular = light.specularStrength * spec * texture(specularMap, fragTexCoord).rgb;
 
 	return ambient + diffuse + specular;
 }

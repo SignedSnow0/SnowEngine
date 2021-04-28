@@ -118,6 +118,7 @@
     <ClInclude Include="src\Input\keyboard.h" />
     <ClInclude Include="src\Input\mouse.h" />
     <ClInclude Include="src\light.h" />
+    <ClInclude Include="src\Lights\directionalLight.h" />
     <ClInclude Include="src\mesh.h" />
     <ClInclude Include="src\model.h" />
     <ClInclude Include="src\pipeline.h" />
@@ -145,6 +146,7 @@
     <ClCompile Include="src\Input\keyboard.cpp" />
     <ClCompile Include="src\Input\mouse.cpp" />
     <ClCompile Include="src\light.cpp" />
+    <ClCompile Include="src\Lights\directionalLight.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\mesh.cpp" />
     <ClCompile Include="src\model.cpp" />
