@@ -134,5 +134,4 @@ namespace SnowEngine {
             wnd->GetEvents()->FileDroppedEvent.Dispatch(count, paths);
         });
     }
-
 }

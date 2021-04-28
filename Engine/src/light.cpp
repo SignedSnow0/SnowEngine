@@ -51,7 +51,7 @@ namespace SnowEngine {
 			SetAmbientStrength(ambient);		
 		}
 		ImGui::End();
-		uBuffer.Update(frame, { color, ambientStrength, pos, cameraPos, specularStrength });
+		uBuffer.Update(frame, { ambientStrength, specularStrength, color, pos, cameraPos  });
 
 		model.SetScale(glm::vec3(0.5f));
 	}

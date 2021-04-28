@@ -23,7 +23,7 @@ layout(push_constant) uniform Model{
 void main() {
 	fragPos = vec3(model.transform * vec4(inVertex,1.0));
 	fragtexCoord = inTexCoord;
-	fragNormal = inNormal;
+	fragNormal = mat3(transpose(inverse(model.transform))) * inNormal;
 
-	gl_Position = camera.proj * camera.view * vec4(fragPos, 1.0);	
+	gl_Position = camera.proj * camera.view * model.transform * vec4(inVertex, 1.0);	
 }

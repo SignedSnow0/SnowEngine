@@ -66,6 +66,10 @@ namespace SnowEngine {
         //
 		VkFormat		FindSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
 
+	
+		////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		PFN_vkCmdSetCullModeEXT vkCmdSetCullMode;
+		////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	private:
 		//
 		bool						CheckDeviceExtensionsSupport(VkPhysicalDevice device);
@@ -99,7 +103,8 @@ namespace SnowEngine {
 		void						SelectPhysicalDevice();
 		//Creates the manger for the validation layers
 		void						SetupValidationCallbacks();	
-		
+		void						LoadExtensionFunctions();
+
 	private:
 		static Device* currentDevice;
 

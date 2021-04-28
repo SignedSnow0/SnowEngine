@@ -95,6 +95,7 @@
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="src\Ecs\lightComponents.h" />
     <ClInclude Include="src\Ecs\scene.h" />
     <ClInclude Include="src\application.h" />
     <ClInclude Include="src\Buffers\buffer.hpp" />
@@ -125,6 +126,7 @@
     <ClInclude Include="src\window.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\Ecs\lightComponents.cpp" />
     <ClCompile Include="src\Ecs\scene.cpp" />
     <ClCompile Include="src\application.cpp" />
     <ClCompile Include="src\Buffers\texture.cpp" />

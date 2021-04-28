@@ -48,7 +48,7 @@ namespace SnowEngine {
 		ModelComponent() = default;
 		ModelComponent(const ModelComponent&) = default;
 		ModelComponent(Model* model) : model(model) {}
-		
+
 		void ImGuiDraw();
 
 		std::string Type = "ModelComponent";

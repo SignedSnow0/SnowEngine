@@ -52,7 +52,7 @@ namespace SnowEngine {
         std::unique_ptr<SwapChain> swapChain;
         std::vector<VkCommandBuffer> commandBuffers;
         ImGuiLayer* imguiLayer;
-        Light light{ device };
+        Light startingLight{ device };
         Pipeline* pipeline;
         Camera* camera;
         Model startingEntity{ device, "resources/models/sphere.obj" };

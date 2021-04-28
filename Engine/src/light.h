@@ -1,17 +1,16 @@
 #pragma once
 #include <glm/glm.hpp>
 
-#include "Buffers/uniformBuffer.hpp"
 #include "model.h"
 
 namespace SnowEngine {
 	class Light {
 		struct LightUbo {
-			glm::vec3 color;
-			float ambientStrenght;
-			glm::vec3 pos;
-			glm::vec3 cameraPos;
-			float specularStrength;
+			alignas(4) float ambientStrenght;
+			alignas(4) float specularStrength;
+			alignas(16) glm::vec3 color;
+			alignas(16) glm::vec3 pos;
+			alignas(16) glm::vec3 cameraPos;
 		};
 	public:
 		Light(Device& device);

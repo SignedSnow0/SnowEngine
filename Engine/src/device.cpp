@@ -14,7 +14,8 @@ namespace SnowEngine {
 
 	//estensioni a livello device
 	static const std::vector<const char*> deviceExtensions = {
-		VK_KHR_SWAPCHAIN_EXTENSION_NAME
+		VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+		VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME
 	};
 
 	VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger) {
@@ -48,6 +49,8 @@ namespace SnowEngine {
 		CreateDescriptorPool();
 
 		currentDevice = this;
+
+		LoadExtensionFunctions();
 	}
 
 	Device::~Device() {
@@ -258,6 +261,7 @@ namespace SnowEngine {
 		poolInfo.poolSizeCount	= static_cast<uint32_t>(poolSizes.size());
 		poolInfo.pPoolSizes		= poolSizes.data();
 		poolInfo.maxSets		= 1000;
+		poolInfo.flags			= VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 
 		if (vkCreateDescriptorPool(device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS)
 			throw std::runtime_error("Failed to create descriptor pool!");
@@ -306,6 +310,12 @@ namespace SnowEngine {
 		VkPhysicalDeviceFeatures deviceFeatures{}; //features optionali che vogliamo usare nel programma (devono essere presenti nel physical device)
 		deviceFeatures.samplerAnisotropy = VK_TRUE; //usato nel texture samplers
 
+		//////////////////////////////////////////////////////External features////////////////////////////////////////////////////////////////////////////////
+		VkPhysicalDeviceExtendedDynamicStateFeaturesEXT extendedFeatures{};
+		extendedFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT;
+		extendedFeatures.extendedDynamicState = VK_TRUE;
+		//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 		VkDeviceCreateInfo createInfo{};
 		createInfo.sType					= VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 		createInfo.pQueueCreateInfos		= queueCreateInfos.data();
@@ -313,7 +323,8 @@ namespace SnowEngine {
 		createInfo.pEnabledFeatures			= &deviceFeatures;
 		createInfo.enabledExtensionCount	= static_cast<uint32_t>(deviceExtensions.size());
 		createInfo.ppEnabledExtensionNames	= deviceExtensions.data();
-
+		createInfo.pNext = &extendedFeatures;
+		
 		if (enableValidationLayers) { //parte non necessaria: ora le estensioni di validation non sono supportate a livello device
 			createInfo.enabledLayerCount	= static_cast<uint32_t>(validationLayers.size());
 			createInfo.ppEnabledLayerNames	= validationLayers.data();
@@ -386,7 +397,7 @@ namespace SnowEngine {
 		std::vector<VkExtensionProperties> extensions(extensionCount);
 		vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data());
 
-		std::cout << "Available extensions:\n";
+		std::cout << "Available instance extensions:\n";
 		for (const auto& extension : extensions)
 			std::cout << '\t' << extension.extensionName << '\n';
 	}
@@ -498,6 +509,14 @@ namespace SnowEngine {
 		if (physicalDevice == VK_NULL_HANDLE) {
 			throw std::runtime_error("Failed to find a suitable GPU!");
 		}
+		uint32_t extensionsCount;
+		vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionsCount, nullptr);
+		std::vector<VkExtensionProperties> availableExtensions(extensionsCount);
+		vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionsCount, availableExtensions.data());
+
+		std::cout << "Available device extensions:\n";
+		for (const auto& extension : availableExtensions)
+			std::cout << '\t' << extension.extensionName << '\n';
 	}
 
 	void Device::SetupValidationCallbacks() {
@@ -508,5 +527,9 @@ namespace SnowEngine {
 
 		if (CreateDebugUtilsMessengerEXT(instance, &createInfo, nullptr, &debugMessenger) != VK_SUCCESS) //chiamo la funzione per trovare la funzione e poi eseguirla
 			throw std::runtime_error("Failed to set up debug messenger!");
+	}
+
+	void Device::LoadExtensionFunctions() {
+		vkCmdSetCullMode = (PFN_vkCmdSetCullModeEXT)vkGetInstanceProcAddr(instance, "vkCmdSetCullModeEXT");
 	}
 }

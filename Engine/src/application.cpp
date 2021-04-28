@@ -34,7 +34,7 @@ namespace SnowEngine {
         config.pushConstant = pushConstant;
         config.layouts.insert({ 0, globalDescriptorLayout });
         config.layouts.insert({ 1, startingEntity.GetDescriptorLayout() });
-        pipeline = new Pipeline(device, config, "resources/shaders/spirv/base_shader.vert.spv", "resources/shaders/spirv/mapping_shader.frag.spv");
+        pipeline = new Pipeline(device, config, "resources/shaders/spirv/shader.vert.spv", "resources/shaders/spirv/shader.frag.spv");
 
         CreateCommandBuffers();
         imguiLayer = new ImGuiLayer(window, device, *swapChain.get());
@@ -47,10 +47,11 @@ namespace SnowEngine {
 
     Application::~Application() {
         delete imguiLayer;
-
+        delete scene;
         delete pipeline;
 
         vkDestroyDescriptorSetLayout(device, globalDescriptorLayout, nullptr);
+        vkFreeDescriptorSets(device, device.GetDescriptorPool(), globalDescriptorSets.size(), globalDescriptorSets.data());
 
         glfwTerminate();
     }
@@ -89,13 +90,13 @@ namespace SnowEngine {
     }
 
     bool Application::Update(uint32_t frame, float deltaTime) {
-        light.Update(frame, camera->GetPos());
+        startingLight.Update(frame, camera->GetPos());
 
         return true;
     }
 
     void Application::CreateGloalDescriptorSets() {
-        std::vector<VkDescriptorSetLayoutBinding> bindings = { camera->GetLayoutBinding(), light.GetLayoutBinding() };
+        std::vector<VkDescriptorSetLayoutBinding> bindings = { camera->GetLayoutBinding(), startingLight.GetLayoutBinding() };
 
         VkDescriptorSetLayoutCreateInfo createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -119,7 +120,7 @@ namespace SnowEngine {
         for (size_t i = 0; i < 3; i++) {
             std::vector<VkWriteDescriptorSet> descriptorWrites;
             descriptorWrites.push_back(camera->GetDescriptorWrite(i, globalDescriptorSets[i]));
-            descriptorWrites.push_back(light.GetDescriptorWrite(i, globalDescriptorSets[i]));
+            descriptorWrites.push_back(startingLight.GetDescriptorWrite(i, globalDescriptorSets[i]));
 
             vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
         }

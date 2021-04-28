@@ -1,11 +1,18 @@
 #pragma once
 #include "Buffers/buffer.hpp"
 #include "Buffers/texture.h"
+#include "Buffers/uniformBuffer.hpp"
 
 namespace SnowEngine {
 	class Mesh {
 	public:
-		Mesh(Device& device, const std::vector<Vertex> vertices, const std::vector<uint16_t> indices, std::vector<Texture*> textures);
+		struct ProcessingFlags {
+			bool HasTransparency = false;
+			
+			ProcessingFlags() {}
+		};
+	public:
+		Mesh(Device& device, const std::vector<Vertex> vertices, const std::vector<uint16_t> indices, std::vector<Texture*> textures, ProcessingFlags flags = ProcessingFlags());
 		~Mesh();
 
 		inline VkDescriptorSet						GetDescriptorSet(uint32_t frame)			{ return descriptorSets[frame]; }
@@ -20,6 +27,8 @@ namespace SnowEngine {
 
 	private:
 		Device& device;
+		ProcessingFlags flags;
+		UniformBuffer<ProcessingFlags>  flagsBuffer{ device, VK_SHADER_STAGE_FRAGMENT_BIT, 0, flags, 3 };
 
 		VertexBuffer					vertexBuffer;
 		IndexBuffer						indexBuffer;

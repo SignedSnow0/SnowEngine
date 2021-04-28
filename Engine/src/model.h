@@ -7,7 +7,6 @@
 
 #include "device.h"
 #include "mesh.h"
-#include "Buffers/texture.h"
 #include "pipeline.h"
 
 namespace SnowEngine {

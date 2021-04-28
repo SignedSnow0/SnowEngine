@@ -45,9 +45,7 @@ namespace SnowEngine {
 			}
 			ImGui::EndPopup();
 		}
-		ImGui::End();
-
-		
+		ImGui::End();		
 
 		ImGui::Begin("Components");
 		if (selectedEntity) { //se un entità è selezionata ne disegno i componenti

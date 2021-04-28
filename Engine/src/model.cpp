@@ -20,7 +20,10 @@ namespace SnowEngine {
     }
 
     Model::~Model() {
-        vkDestroyDescriptorSetLayout(device, descriptorLayout, nullptr);    
+        vkDestroyDescriptorSetLayout(device, descriptorLayout, nullptr);
+
+        for (Texture* texture : texturesLoaded)
+            delete texture;
 
         for (auto mesh : meshes)
             delete mesh;
@@ -74,6 +77,8 @@ namespace SnowEngine {
     }
 
     Mesh* Model::ProcessMesh(aiMesh* mesh, const aiScene* scene, aiNode* node) {
+        Mesh::ProcessingFlags flags;
+
         std::vector<Vertex> vertices;
         std::vector<uint16_t> indices;
         std::vector<Texture*> textures;
@@ -110,24 +115,26 @@ namespace SnowEngine {
         if (mesh->mMaterialIndex >= 0)
         {
             aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
+            if (float value = material->Get(AI_MATKEY_OPACITY, value) == AI_SUCCESS && value < 1.0f)
+                flags.HasTransparency = true;     
 
-            std::vector<Texture*> diffuseMaps = LoadMaterialTextures(material, aiTextureType_DIFFUSE, "textureDiffuse", 0);
+            std::vector<Texture*> diffuseMaps = LoadMaterialTextures(material, aiTextureType_DIFFUSE, "textureDiffuse", 1);
             if(diffuseMaps.size() == 0)
-                textures.push_back(new Texture(device, VK_SHADER_STAGE_FRAGMENT_BIT, 0, "resources/textures/white.png", 3));
+                textures.push_back(new Texture(device, VK_SHADER_STAGE_FRAGMENT_BIT, 1, "resources/textures/white.png", 3));
             textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
 
-            std::vector<Texture*> specularMaps = LoadMaterialTextures(material, aiTextureType_SPECULAR, "textureSpecular", 1);
+            std::vector<Texture*> specularMaps = LoadMaterialTextures(material, aiTextureType_SPECULAR, "textureSpecular", 2);
 			if (specularMaps.size() == 0)
-				textures.push_back(new Texture(device, VK_SHADER_STAGE_FRAGMENT_BIT, 1, "resources/textures/white.png", 3));
+				textures.push_back(new Texture(device, VK_SHADER_STAGE_FRAGMENT_BIT, 2, "resources/textures/white.png", 3));
             textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
 
-            std::vector<Texture*> normalMaps = LoadMaterialTextures(material, aiTextureType_NORMALS, "textureNormals", 2);
+            std::vector<Texture*> normalMaps = LoadMaterialTextures(material, aiTextureType_NORMALS, "textureNormals", 3);
 			if (normalMaps.size() == 0)
-				textures.push_back(new Texture(device, VK_SHADER_STAGE_FRAGMENT_BIT, 2, "resources/textures/white.png", 3));
+				textures.push_back(new Texture(device, VK_SHADER_STAGE_FRAGMENT_BIT, 3, "resources/textures/white.png", 3));
             textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
         }
 
-        return new Mesh{ device, vertices, indices, textures };
+        return new Mesh{ device, vertices, indices, textures, flags };
     }
 
 
@@ -138,7 +145,7 @@ namespace SnowEngine {
         {
             aiString str;
             mat->GetTexture(type, i, &str);
-            
+
             bool skip = false;
             for (unsigned int j = 0; j < texturesLoaded.size(); j++) {
                 if (std::strcmp(texturesLoaded[j]->GetPath().data(), str.C_Str()) == 0) {
