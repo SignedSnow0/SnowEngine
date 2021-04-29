@@ -13,6 +13,7 @@
 #include "input/mouse.h"
 #include "Ecs/entity.h"
 #include "Ecs/generalComponents.h"
+#include "Ecs/lightComponents.h"
 
 namespace SnowEngine {
     Application* Application::app = nullptr;
@@ -40,9 +41,23 @@ namespace SnowEngine {
         imguiLayer = new ImGuiLayer(window, device, *swapChain.get());
 
         OnUpdate += std::bind(&Application::Update, this, std::placeholders::_1, std::placeholders::_2);
-
-        Entity entity = scene->CreateEntity("Backpack");
-        entity.AddComponent<ModelComponent>(&startingEntity);
+        {
+            Entity entity = scene->CreateEntity("Starting entity");
+            entity.AddComponent<ModelComponent>(&startingEntity);
+            entity.AddComponent<TransformComponent>();
+        }
+        {
+            Entity entity = scene->CreateEntity("Directional light");
+            entity.AddComponent<DirectionalLightComponent>(&dLight);
+        }
+        {
+            Entity entity = scene->CreateEntity("Point light");
+            entity.AddComponent<PointLightComponent>(&pLight);
+        }
+        {
+            Entity entity = scene->CreateEntity("Spot light");
+            entity.AddComponent<SpotLightComponent>(&sLight);
+        }
     }
 
     Application::~Application() {
@@ -69,7 +84,7 @@ namespace SnowEngine {
 
                 imguiLayer->BeginFrame();
                 OnUpdate.Dispatch(index, deltaTime);
-
+                Update(index, deltaTime);
                 Draw(index);
             }
 
@@ -90,13 +105,15 @@ namespace SnowEngine {
     }
 
     bool Application::Update(uint32_t frame, float deltaTime) {
-        startingLight.Update(frame, camera->GetPos());
 
         return true;
     }
 
     void Application::CreateGloalDescriptorSets() {
-        std::vector<VkDescriptorSetLayoutBinding> bindings = { camera->GetLayoutBinding(), startingLight.GetLayoutBinding() };
+        std::vector<VkDescriptorSetLayoutBinding> bindings = { camera->GetLayoutBindings() };
+		bindings.push_back(dLight.GetBuffer()->GetLayoutBinding());
+		bindings.push_back(sLight.GetBuffer()->GetLayoutBinding());
+		bindings.push_back(pLight.GetBuffer()->GetLayoutBinding());
 
         VkDescriptorSetLayoutCreateInfo createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -118,9 +135,10 @@ namespace SnowEngine {
             throw std::runtime_error("Failed to allocate descriptor sets!");
 
         for (size_t i = 0; i < 3; i++) {
-            std::vector<VkWriteDescriptorSet> descriptorWrites;
-            descriptorWrites.push_back(camera->GetDescriptorWrite(i, globalDescriptorSets[i]));
-            descriptorWrites.push_back(startingLight.GetDescriptorWrite(i, globalDescriptorSets[i]));
+            std::vector<VkWriteDescriptorSet> descriptorWrites{ camera->GetDescriptorWrites(i, globalDescriptorSets[i]) };
+			descriptorWrites.push_back(dLight.GetBuffer()->CreateDescriptorWrite(i, globalDescriptorSets[i]));
+			descriptorWrites.push_back(sLight.GetBuffer()->CreateDescriptorWrite(i, globalDescriptorSets[i]));
+			descriptorWrites.push_back(pLight.GetBuffer()->CreateDescriptorWrite(i, globalDescriptorSets[i]));
 
             vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
         }

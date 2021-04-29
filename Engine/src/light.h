@@ -35,7 +35,7 @@ namespace SnowEngine {
 		inline VkDescriptorSetLayoutBinding GetLayoutBinding() { return uBuffer.GetLayoutBinding(); }
 		inline VkWriteDescriptorSet GetDescriptorWrite(uint32_t i , VkDescriptorSet dstSet) { return uBuffer.CreateDescriptorWrite(i, dstSet); }
 
-		void Draw(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, size_t imageIndex);
+		void Bind(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, size_t imageIndex);
 		void Update(uint32_t frame, glm::vec3 camPos);
 
 	private:

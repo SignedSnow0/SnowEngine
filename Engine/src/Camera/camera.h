@@ -10,9 +10,12 @@
 
 namespace SnowEngine {
 	class Camera {
-		struct Ubo {
+		struct VertUBO {
 			glm::mat4 view;
 			glm::mat4 proj;
+		};
+		struct FragUBO {
+			alignas(16) glm::vec3 position;
 		};
 	public:
 		Camera(Device& device, glm::vec3 pos);
@@ -24,8 +27,8 @@ namespace SnowEngine {
 		void BindModel(Model* model);
 		void Draw(VkCommandBuffer commandBuffer, size_t frameIndex, VkDescriptorSet globalDescriptors);
 		bool Update(uint32_t frame, float deltaTime);
-		inline VkDescriptorSetLayoutBinding GetLayoutBinding() { return mvpBuffer.GetLayoutBinding(); }
-		inline VkWriteDescriptorSet GetDescriptorWrite(uint32_t i, VkDescriptorSet dstSet) { return mvpBuffer.CreateDescriptorWrite(i, dstSet); }
+		inline std::vector<VkDescriptorSetLayoutBinding> GetLayoutBindings() { return{ uViewPos.GetLayoutBinding(), uPosition.GetLayoutBinding() }; }
+		inline std::vector<VkWriteDescriptorSet> GetDescriptorWrites(uint32_t i, VkDescriptorSet dstSet) { return { uViewPos.CreateDescriptorWrite(i, dstSet), uPosition.CreateDescriptorWrite(i, dstSet) }; }
 
 	private:
 
@@ -34,8 +37,10 @@ namespace SnowEngine {
 		
 		std::vector<Model*> models;
 
-		Ubo mvpMatrix{};
-		UniformBuffer<Ubo> mvpBuffer{ device, VK_SHADER_STAGE_VERTEX_BIT, 0, mvpMatrix, 3 };
+		VertUBO viewPosMatrix{};
+		UniformBuffer<VertUBO> uViewPos{ device, VK_SHADER_STAGE_VERTEX_BIT, 0, viewPosMatrix, 3 };
+		FragUBO position{};
+		UniformBuffer<FragUBO> uPosition{ device, VK_SHADER_STAGE_FRAGMENT_BIT, 1, position, 3 };
 
 		std::pair<float, float> windowSize{ 1920, 1080 };
 		float lastX = 400, lastY = 300;

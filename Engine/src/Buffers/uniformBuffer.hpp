@@ -1,3 +1,4 @@
+#pragma once
 #include <vector>
 
 #include <vulkan/vulkan.h>
@@ -5,34 +6,34 @@
 #include "buffer.hpp"
 
 namespace SnowEngine {
-    template<typename T>
-    class UniformBuffer {
-    public:
-        UniformBuffer(Device& device, VkShaderStageFlags shaderTarget, uint32_t binding, const T& data, size_t swapchainImagesCount);
-        ~UniformBuffer();
+	template<typename T>
+	class UniformBuffer {
+	public:
+		UniformBuffer(Device& device, VkShaderStageFlags shaderTarget, uint32_t binding, const T& data, size_t swapchainImagesCount);
+		~UniformBuffer();
 
-        inline VkDescriptorSetLayoutBinding GetLayoutBinding() { return layoutBinding; }
+		inline VkDescriptorSetLayoutBinding GetLayoutBinding() { return layoutBinding; }
 
-        void Update(uint32_t imageIndex, const T& data);    
-        VkWriteDescriptorSet CreateDescriptorWrite(uint32_t i, VkDescriptorSet dstSet);
+		void Update(uint32_t imageIndex, const T& data);
+		VkWriteDescriptorSet CreateDescriptorWrite(uint32_t i, VkDescriptorSet dstSet);
 
-    private:
+	private:
 		void CreateBinding(VkShaderStageFlags shaderTarget, uint32_t binding);
 		void CreateUniformBuffers();
 
-    private:
-        Device& device;
-           
-        VkDescriptorBufferInfo bufferInfo{};
-        VkDescriptorSetLayoutBinding layoutBinding{};
+	private:
+		Device& device;
 
-        std::vector<VkBuffer> uniformBuffers;
-        std::vector<VkDeviceMemory> uniformBuffersMemory;
+		VkDescriptorBufferInfo bufferInfo{};
+		VkDescriptorSetLayoutBinding layoutBinding{};
 
-        size_t swapchainImagesCount;
-        uint32_t binding;
-        const T& data;
-    };
+		std::vector<VkBuffer> uniformBuffers;
+		std::vector<VkDeviceMemory> uniformBuffersMemory;
+
+		size_t swapchainImagesCount;
+		uint32_t binding;
+		const T& data;
+	};
 }
 
 /////////////////////////////////////////////////////Implementation////////////////////////////////////////////////////
@@ -40,7 +41,7 @@ namespace SnowEngine {
 namespace SnowEngine {
 	template<typename T>
 	UniformBuffer<T>::UniformBuffer(Device& device, VkShaderStageFlags shaderTarget, uint32_t binding, const T& data, size_t swapchainImagesCount)
-        : device(device), swapchainImagesCount(swapchainImagesCount), data(data), binding(binding) {
+		: device(device), swapchainImagesCount(swapchainImagesCount), data(data), binding(binding) {
 		CreateUniformBuffers();
 		CreateBinding(shaderTarget, binding);
 	}

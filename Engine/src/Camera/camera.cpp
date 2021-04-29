@@ -72,11 +72,12 @@ namespace SnowEngine {
 		direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
 		front = glm::normalize(direction);
 
-		mvpMatrix.view = glm::lookAt(pos, pos + front, up);
-		mvpMatrix.proj = glm::perspective(glm::radians(45.0f), windowSize.first / windowSize.second, 0.1f, 1000.0f);
-		mvpMatrix.proj[1][1] *= -1;
-		mvpBuffer.Update(frame, mvpMatrix);
+		viewPosMatrix.view = glm::lookAt(pos, pos + front, up);
+		viewPosMatrix.proj = glm::perspective(glm::radians(45.0f), windowSize.first / windowSize.second, 0.1f, 1000.0f);
+		viewPosMatrix.proj[1][1] *= -1;
 
+		uViewPos.Update(frame, viewPosMatrix);
+		uPosition.Update(frame, { pos });
 		return true; //The events keeps on dispatching
 	}
 }

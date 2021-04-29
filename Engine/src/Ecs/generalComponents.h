@@ -7,7 +7,7 @@ namespace SnowEngine {
 		Component() = default;
 		Component(const Component&) = default;
 
-		virtual void ImguiDraw() { }
+		virtual void ImguiDraw() {}
 		virtual void Update() {}
 
 		std::string Type = "Component";
@@ -35,7 +35,6 @@ namespace SnowEngine {
 
 		operator const glm::mat4() { return GetTransform(); }
 
-		static void DrawVec3(glm::vec3& value, const std::string label);
 		void ImGuiDraw();
 		glm::mat4 GetTransform();
 

@@ -7,6 +7,7 @@
 #include "generalComponents.h"
 #include "imguiLib/imgui.h"
 #include "application.h"
+#include "lightComponents.h">
 
 namespace SnowEngine {
 	static Entity selectedEntity;
@@ -24,7 +25,6 @@ namespace SnowEngine {
 		Entity entity{ m_registry.create(), this };
 
 		entity.AddComponent<TagComponent>(name.empty() ? "Entity" : name);
-		entity.AddComponent<TransformComponent>();
 		return entity;
 	}
 
@@ -52,7 +52,6 @@ namespace SnowEngine {
 			DrawComponents(selectedEntity);
 		}
 		ImGui::End();
-
 		return true;
 	}
 
@@ -119,6 +118,18 @@ namespace SnowEngine {
 		if (entity.HasComponent<ModelComponent>()) {
 			DrawComponent<ModelComponent>(entity, "Model");
 		}
+
+		if (entity.HasComponent<SpotLightComponent>()) {
+			DrawComponent<SpotLightComponent>(entity, "Spotlight");
+		}
+
+		if (entity.HasComponent<DirectionalLightComponent>()) {			
+			DrawComponent<DirectionalLightComponent>(entity, "Directional light");
+		}
+
+		if (entity.HasComponent<PointLightComponent>()) {
+			DrawComponent<PointLightComponent>(entity, "Point light");
+		}
 	}
 
 	template<typename T>
@@ -169,20 +180,43 @@ namespace SnowEngine {
 	}
 
 	void Scene::Draw(uint32_t frame, VkCommandBuffer buffer) {
-		auto view = m_registry.view<ModelComponent, TransformComponent>(); //tutte le entità con un modelcomponent
-		Pipeline* pipeline = Application::Get().GetPipeline();
-		for (auto entity : view) {
-			bool found = false;
-			auto model = view.get<ModelComponent>(entity); //ottengo il component di una specifica entità
-			if (model.model != nullptr) {		
-				vkCmdBindPipeline(buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->GetPipeline());
+		{
+			auto view = m_registry.view<PointLightComponent>();
+			for (auto entity : view) {
+				PointLight* light = view.get<PointLightComponent>(entity).Light;
+				light->Update(frame);
+			}
+		}
+		{
+			auto view = m_registry.view<SpotLightComponent>();
+			for (auto entity : view) {
+				SpotLight* light = view.get<SpotLightComponent>(entity).Light;
+				light->Update(frame);
+			}
+		}
+		{
+			auto view = m_registry.view<DirectionalLightComponent>();
+			for (auto entity : view) {
+				DirectionalLight* light = view.get<DirectionalLightComponent>(entity).Light;
+				light->Update(frame);
+			}
+		}
+		{
+			auto view = m_registry.view<ModelComponent, TransformComponent>(); //tutte le entità con un modelcomponent
+			Pipeline* pipeline = Application::Get().GetPipeline();
+			for (auto entity : view) {
+				bool found = false;
+				auto model = view.get<ModelComponent>(entity); //ottengo il component di una specifica entità
+				if (model.model != nullptr) {
+					vkCmdBindPipeline(buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->GetPipeline());
 
-				glm::mat4 transform = view.get<TransformComponent>(entity);
-				vkCmdPushConstants(buffer, pipeline->GetLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &transform);
-				vkCmdBindDescriptorSets(buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->GetLayout(), 0, 1, &Application::Get().globalDescriptorSets[frame], 0, nullptr);//todo create descriptors in scene
+					glm::mat4 transform = view.get<TransformComponent>(entity);
+					vkCmdPushConstants(buffer, pipeline->GetLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &transform);
+					vkCmdBindDescriptorSets(buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->GetLayout(), 0, 1, &Application::Get().globalDescriptorSets[frame], 0, nullptr);//todo create descriptors in scene
 
-				model.model->Draw(buffer, frame, pipeline->GetLayout());			
-			}	
+					model.model->Draw(buffer, frame, pipeline->GetLayout());
+				}
+			}
 		}
 	}
 }

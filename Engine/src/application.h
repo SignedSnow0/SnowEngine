@@ -9,6 +9,10 @@
 #include "imguiLayer.h"
 #include "Ecs/scene.h"
 
+#include "Lights/directionalLight.h"
+#include "Lights/spotLight.h"
+#include "Lights/pointLight.h"
+
 namespace SnowEngine {
     
     class Application {
@@ -52,15 +56,18 @@ namespace SnowEngine {
         std::unique_ptr<SwapChain> swapChain;
         std::vector<VkCommandBuffer> commandBuffers;
         ImGuiLayer* imguiLayer;
-        Light startingLight{ device };
         Pipeline* pipeline;
         Camera* camera;
         Model startingEntity{ device, "resources/models/sphere.obj" };
-
+		
         std::vector<VkDescriptorSet> globalDescriptorSets;
         VkDescriptorSetLayout globalDescriptorLayout;
         Scene* scene;
         VkPushConstantRange pushConstant;
+
+		DirectionalLight dLight{ device };
+		SpotLight sLight{ device };
+		PointLight pLight{ device };
 
         friend class Scene;
     };

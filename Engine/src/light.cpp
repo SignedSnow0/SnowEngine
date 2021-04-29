@@ -15,10 +15,9 @@ namespace SnowEngine {
 
 	}
 
-	void Light::Draw(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, size_t imageIndex) {
+	void Light::Bind(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, size_t imageIndex) {
 		auto push = model.GetPushConstant();
 		vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &push);
-		//model.Draw(commandBuffer, imageIndex);
 	}
 
 	void Light::Update(uint32_t frame, glm::vec3 camPos) {
