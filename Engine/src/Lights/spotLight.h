@@ -13,13 +13,14 @@ namespace SnowEngine {
 			alignas(4) float Linear = 0.09f;
 			alignas(4) float Quadratic = 0.032f;
 			alignas(16) glm::vec3 Position = glm::vec3(0.0f);
-			alignas(16) glm::vec3 Direction = glm::vec3(0.0f);
+			alignas(16) glm::vec3 Direction = glm::vec3(-1.0f);
 			alignas(16) glm::vec3 Ambient = glm::vec3(0.0f);
 			alignas(16) glm::vec3 Diffuse = glm::vec3(1.0f);
 			alignas(16) glm::vec3 Specular = glm::vec3(1.0f);
 		};
 	public:
 		SpotLight(Device& device);
+		~SpotLight();
 
 		inline void SetCutOff(const float& cutOff)				{ ubo.CutOff = cutOff; }
 		inline void SetOuterCutOff(const float& outerCutOff)	{ ubo.OuterCutOff = outerCutOff; }

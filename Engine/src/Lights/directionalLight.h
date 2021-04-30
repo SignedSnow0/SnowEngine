@@ -13,6 +13,7 @@ namespace SnowEngine {
 		};
 	public:
 		DirectionalLight(Device& device);
+		~DirectionalLight() = default;
 
 		inline void SetDirection(const glm::vec3& direction)	{ ubo.Direction = direction; }
 		inline void SetAmbient(const glm::vec3& ambient)		{ ubo.Ambient = ambient; }

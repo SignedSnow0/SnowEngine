@@ -6,7 +6,6 @@
 
 #include "model.h"
 #include "pipeline.h"
-#include "light.h"
 
 namespace SnowEngine {
 	class Camera {

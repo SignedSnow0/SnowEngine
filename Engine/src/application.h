@@ -68,7 +68,8 @@ namespace SnowEngine {
 		DirectionalLight dLight{ device };
 		SpotLight sLight{ device };
 		PointLight pLight{ device };
-
+		PointLight pLight2{ device };
+        std::vector<Entity> entities;
         friend class Scene;
     };
 }

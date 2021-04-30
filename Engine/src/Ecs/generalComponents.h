@@ -9,8 +9,6 @@ namespace SnowEngine {
 
 		virtual void ImguiDraw() {}
 		virtual void Update() {}
-
-		std::string Type = "Component";
 	};
 
 	struct TagComponent : Component {
@@ -21,8 +19,6 @@ namespace SnowEngine {
 		TagComponent(const std::string& tag) : Tag(tag) {}
 
 		operator const std::string() { return Tag; }
-
-		std::string Type = "TagComponent";
 	};
 
 	struct TransformComponent : Component {
@@ -37,8 +33,6 @@ namespace SnowEngine {
 
 		void ImGuiDraw();
 		glm::mat4 GetTransform();
-
-		std::string Type = "TransformComponent";
 	};
 
 	struct ModelComponent : Component {
@@ -49,7 +43,5 @@ namespace SnowEngine {
 		ModelComponent(Model* model) : model(model) {}
 
 		void ImGuiDraw();
-
-		std::string Type = "ModelComponent";
 	};
 }

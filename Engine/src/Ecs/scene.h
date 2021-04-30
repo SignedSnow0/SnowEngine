@@ -12,7 +12,7 @@ namespace SnowEngine {
 		Scene();
 		~Scene();
 
-		Entity& CreateEntity(const std::string& name = "");
+		Entity CreateEntity(const std::string& name = "");
 		void DeleteEntity(Entity entity);
 
 		void Draw(uint32_t frame, VkCommandBuffer buffer);

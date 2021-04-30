@@ -21,7 +21,7 @@ namespace SnowEngine {
 
 	}
 
-	SnowEngine::Entity& Scene::CreateEntity(const std::string& name) {
+	SnowEngine::Entity Scene::CreateEntity(const std::string& name) {
 		Entity entity{ m_registry.create(), this };
 
 		entity.AddComponent<TagComponent>(name.empty() ? "Entity" : name);
@@ -33,12 +33,16 @@ namespace SnowEngine {
 	}
 
 	bool Scene::Update(uint32_t frame, float deltaTime) {
-		if (ImGui::Begin("Scene")) {
-			m_registry.each([&](entt::entity entityHandle) {
-				Entity entity{ entityHandle, this };
-				DrawEntityNode(entity); //per ogni entità disegno il suo nodo nella lista di entità
-			});
-		}
+		ImGui::Begin("Scene");
+
+		m_registry.each([&](auto entityID) {
+			Entity entity{ entityID, this };
+			DrawEntityNode(entity); //per ogni entità disegno il suo nodo nella lista di entità
+		});
+
+		if (ImGui::IsMouseDown(0) && ImGui::IsWindowHovered())
+			selectedEntity = {}; //resets selection
+
 		if (ImGui::BeginPopupContextWindow(0, 1, false)) {
 			if (ImGui::MenuItem("Add Entity")) {
 				CreateEntity("New Entity");
@@ -56,12 +60,14 @@ namespace SnowEngine {
 	}
 
 	void Scene::DrawEntityNode(Entity entity) {
-		TagComponent& tag = entity.GetComponent<TagComponent>();
+		auto& tag = entity.GetComponent<TagComponent>().Tag;
+
 		ImGuiTreeNodeFlags flags = ((selectedEntity == entity) ? ImGuiTreeNodeFlags_Selected : 0) | ImGuiTreeNodeFlags_OpenOnArrow;
 		flags |= ImGuiTreeNodeFlags_SpanAvailWidth;
-		bool opened = ImGui::TreeNodeEx((void*)(uint64_t)(uint32_t)entity, flags, tag.Tag.c_str());
-		if (ImGui::IsItemClicked())
+		bool opened = ImGui::TreeNodeEx((void*)(uint64_t)(uint32_t)entity, flags, tag.c_str());
+		if (ImGui::IsItemClicked()) {
 			selectedEntity = entity;
+		}
 
 		bool entityDeleted = false;
 		if (ImGui::BeginPopupContextItem()) {
@@ -73,7 +79,7 @@ namespace SnowEngine {
 
 		if (opened) {
 			ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
-			bool opened = ImGui::TreeNodeEx((void*)9817239, flags, tag.Tag.c_str());
+			bool opened = ImGui::TreeNodeEx((void*)9817239, flags, tag.c_str());
 			if (opened)
 				ImGui::TreePop();
 			ImGui::TreePop();

@@ -41,23 +41,19 @@ namespace SnowEngine {
         imguiLayer = new ImGuiLayer(window, device, *swapChain.get());
 
         OnUpdate += std::bind(&Application::Update, this, std::placeholders::_1, std::placeholders::_2);
-        {
-            Entity entity = scene->CreateEntity("Starting entity");
-            entity.AddComponent<ModelComponent>(&startingEntity);
-            entity.AddComponent<TransformComponent>();
-        }
-        {
-            Entity entity = scene->CreateEntity("Directional light");
-            entity.AddComponent<DirectionalLightComponent>(&dLight);
-        }
-        {
-            Entity entity = scene->CreateEntity("Point light");
-            entity.AddComponent<PointLightComponent>(&pLight);
-        }
-        {
-            Entity entity = scene->CreateEntity("Spot light");
-            entity.AddComponent<SpotLightComponent>(&sLight);
-        }
+
+        entities.push_back(scene->CreateEntity("Starting entity"));
+        entities[0].AddComponent<ModelComponent>(&startingEntity);
+        entities[0].AddComponent<TransformComponent>();
+
+        entities.push_back(scene->CreateEntity("Directional light"));
+        entities[1].AddComponent<DirectionalLightComponent>(&dLight);
+
+        entities.push_back(scene->CreateEntity("Point light"));
+        entities[2].AddComponent<PointLightComponent>(&pLight);
+
+        entities.push_back(scene->CreateEntity("Spot light"));
+        entities[3].AddComponent<SpotLightComponent>(&sLight);
     }
 
     Application::~Application() {

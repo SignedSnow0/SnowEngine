@@ -124,6 +124,7 @@ void main() {
     vec3 viewDir = normalize(camera.pos - fragPos);
     
 	vec3 result = CalcDirLight(norm, viewDir);
+
     for(int i = 0; i < pLights.light.length(); i++)
         result += CalcPointLight(pLights.light[i], norm, fragPos, viewDir);    
 
