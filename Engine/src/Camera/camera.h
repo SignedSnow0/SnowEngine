@@ -22,6 +22,7 @@ namespace SnowEngine {
 
 		inline void SetWindowSize(std::pair<float, float> size) { windowSize = size; }
 		inline glm::vec3 GetPos() { return pos; }
+		inline glm::mat4 GetViewProj() { return viewPosMatrix.proj * viewPosMatrix.view; }
 		//Adds the model to the render queue, after a frame is rendered the queue is emptied
 		void BindModel(Model* model);
 		void Draw(VkCommandBuffer commandBuffer, size_t frameIndex, VkDescriptorSet globalDescriptors);

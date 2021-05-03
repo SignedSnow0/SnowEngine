@@ -25,7 +25,7 @@ namespace SnowEngine {
             VkRenderPass                            renderPass          = nullptr;
             //Pair of destriptor layout and its order in shader bindings
             std::map<int, VkDescriptorSetLayout>    layouts;
-            VkPushConstantRange                     pushConstant;
+            VkPushConstantRange*                    pushConstant = nullptr;
         };
     public:
         Pipeline(Device& device, PipelineConfig& pipelineFixedLayout, std::string vertexPath, std::string fragmentPath);
@@ -51,7 +51,7 @@ namespace SnowEngine {
         PipelineConfig      config;
         VkPipeline          pipeline;
 
-        Shader*  vertexShader;
-        Shader*  fragmentShader;
+        Shader*  vertexShader = nullptr;
+        Shader*  fragmentShader = nullptr;
     };
 }

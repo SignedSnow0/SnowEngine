@@ -124,6 +124,7 @@
     <ClInclude Include="src\model.h" />
     <ClInclude Include="src\pipeline.h" />
     <ClInclude Include="src\shader.h" />
+    <ClInclude Include="src\ShadowMapping\shadowMap.h" />
     <ClInclude Include="src\swapChain.h" />
     <ClInclude Include="src\window.h" />
   </ItemGroup>
@@ -156,12 +157,12 @@
     <ClCompile Include="src\model.cpp" />
     <ClCompile Include="src\pipeline.cpp" />
     <ClCompile Include="src\shader.cpp" />
+    <ClCompile Include="src\ShadowMapping\shadowMap.cpp" />
     <ClCompile Include="src\swapChain.cpp" />
     <ClCompile Include="src\window.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="resources\shaders\shadowMappingShader.frag" />
-    <None Include="resources\shaders\shadowMappingShader.vert" />
+    <None Include="resources\shaders\shadowMapping.frag" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

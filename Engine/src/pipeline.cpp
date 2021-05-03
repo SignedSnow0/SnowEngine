@@ -7,8 +7,10 @@
 namespace SnowEngine {
 
     Pipeline::Pipeline(Device& device, PipelineConfig& config, std::string vertexPath, std::string fragmentPath) : device(device), config(config) {
-        vertexShader = new Shader(device, vertexPath, VK_SHADER_STAGE_VERTEX_BIT);
-        fragmentShader = new Shader(device, fragmentPath, VK_SHADER_STAGE_FRAGMENT_BIT);
+        if (vertexPath != "")
+            vertexShader = new Shader(device, vertexPath, VK_SHADER_STAGE_VERTEX_BIT);
+        if (fragmentPath != "")
+            fragmentShader = new Shader(device, fragmentPath, VK_SHADER_STAGE_FRAGMENT_BIT);
         CreatePipelineLayout(config);
         CreatePipeline(config);
     }
@@ -23,7 +25,11 @@ namespace SnowEngine {
     }
     
     void Pipeline::CreatePipeline(PipelineConfig& config) {
-        VkPipelineShaderStageCreateInfo shaderStages[] = { vertexShader->GetShaderStage(), fragmentShader->GetShaderStage() };
+        std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
+        if (vertexShader != nullptr)
+            shaderStages.push_back(vertexShader->GetShaderStage());
+        if (fragmentShader != nullptr)
+            shaderStages.push_back(fragmentShader->GetShaderStage());
 
         auto vertexBindingDescription       = VertexBuffer::GetBindingDescription();
         auto vertexAttributeDescriptions    = VertexBuffer::GetAttributeDescriptions();
@@ -46,8 +52,8 @@ namespace SnowEngine {
 
         VkGraphicsPipelineCreateInfo pipelineInfo{};
         pipelineInfo.sType                  = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-        pipelineInfo.stageCount             = 2;
-        pipelineInfo.pStages                = shaderStages;
+        pipelineInfo.stageCount             = shaderStages.size();
+        pipelineInfo.pStages                = shaderStages.data();
         pipelineInfo.pVertexInputState      = &vertexInputInfo;
         pipelineInfo.pInputAssemblyState    = &config.inputAssembly;
         pipelineInfo.pViewportState         = &config.viewportInfo;
@@ -76,8 +82,8 @@ namespace SnowEngine {
         pipelineLayoutInfo.sType                    = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
         pipelineLayoutInfo.setLayoutCount           = static_cast<uint32_t>(layouts.size());
         pipelineLayoutInfo.pSetLayouts              = layouts.data();
-        pipelineLayoutInfo.pushConstantRangeCount   = 1;
-        pipelineLayoutInfo.pPushConstantRanges      = &config.pushConstant;
+        pipelineLayoutInfo.pushConstantRangeCount   = config.pushConstant ? 1 : 0;
+        pipelineLayoutInfo.pPushConstantRanges      = config.pushConstant ? config.pushConstant : nullptr;
 
         if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS)
             throw std::runtime_error("Failed to create pipeline layout!");
@@ -86,7 +92,7 @@ namespace SnowEngine {
     Pipeline::PipelineConfig Pipeline::FillPipelineConfig() {
         PipelineConfig pc{};
         
-        pc.inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+        pc.inputAssembly.sType                  = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
         pc.inputAssembly.topology               = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
         pc.inputAssembly.primitiveRestartEnable = VK_FALSE; //permette di usare un valore speciale 0xFFFF per dividere diversi triangoli nel buffer se vk_true
 
@@ -134,7 +140,8 @@ namespace SnowEngine {
         pc.colorBlending.blendConstants[1]  = 0.0f; // Optional
         pc.colorBlending.blendConstants[2]  = 0.0f; // Optional
         pc.colorBlending.blendConstants[3]  = 0.0f; // Optional
-        
+        //pAttachments è nella creazione perchè la struttura è passata per valore
+
         pc.dynamicStates.push_back(VK_DYNAMIC_STATE_SCISSOR);
 		pc.dynamicStates.push_back(VK_DYNAMIC_STATE_VIEWPORT);
 		pc.dynamicStates.push_back(VK_DYNAMIC_STATE_FRONT_FACE_EXT);

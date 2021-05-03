@@ -30,7 +30,7 @@ namespace SnowEngine {
     }
 
     void Model::Draw(VkCommandBuffer commandBuffer, size_t imageIndex, VkPipelineLayout layout) {
-        for (auto mesh : meshes) {
+        for (auto& mesh : meshes) {
             std::vector<VkDescriptorSet> sets = { mesh->GetDescriptorSet(imageIndex) };
             vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 1, sets.size(), sets.data(), 0, nullptr);
             
@@ -38,7 +38,13 @@ namespace SnowEngine {
         }
     }
     
-    void Model::CreateDescriptorSets() {
+	void Model::DrawShadow(VkCommandBuffer commandBuffer) {
+        for (auto& mesh : meshes) {
+            mesh->Draw(commandBuffer);
+        }
+	}
+
+	void Model::CreateDescriptorSets() {
         std::vector<VkDescriptorSetLayoutBinding> bindings = { meshes[0]->GetLayoutBindings() };
 
         VkDescriptorSetLayoutCreateInfo layoutInfo{};

@@ -13,6 +13,8 @@
 #include "Lights/spotLight.h"
 #include "Lights/pointLight.h"
 
+#include "ShadowMapping/shadowMap.h"
+
 namespace SnowEngine {
     
     class Application {
@@ -31,7 +33,11 @@ namespace SnowEngine {
         //
         void                BeginCommandBuffer(uint32_t i);
         //
+        void                BeginRenderPass(uint32_t i);
+        //
         void                EndCommandBuffer(uint32_t i);
+        //
+        void                EndRenderPass(uint32_t i);
         //
         void                CreateCommandBuffers();
         //
@@ -63,13 +69,16 @@ namespace SnowEngine {
         std::vector<VkDescriptorSet> globalDescriptorSets;
         VkDescriptorSetLayout globalDescriptorLayout;
         Scene* scene;
-        VkPushConstantRange pushConstant;
+        
 
 		DirectionalLight dLight{ device };
 		SpotLight sLight{ device };
 		PointLight pLight{ device };
 		PointLight pLight2{ device };
         std::vector<Entity> entities;
+
+        ShadowMap* shadowMap;
+
         friend class Scene;
     };
 }

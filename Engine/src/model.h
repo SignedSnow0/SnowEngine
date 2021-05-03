@@ -28,6 +28,7 @@ namespace SnowEngine {
         inline std::string GetName() { return name; }
 
         void Draw(VkCommandBuffer commandBuffer, size_t imageIndex, VkPipelineLayout layout);
+        void DrawShadow(VkCommandBuffer commandBuffer);
 
     private:
         void    CreateDescriptorSets();
