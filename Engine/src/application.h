@@ -68,8 +68,7 @@ namespace SnowEngine {
 		
         std::vector<VkDescriptorSet> globalDescriptorSets;
         VkDescriptorSetLayout globalDescriptorLayout;
-        Scene* scene;
-        
+        Scene* scene; 
 
 		DirectionalLight dLight{ device };
 		SpotLight sLight{ device };

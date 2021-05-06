@@ -6,13 +6,9 @@
 layout(location = 0) in vec3 fragNormal;
 layout(location = 1) in vec3 fragPos;
 layout(location = 2) in vec2 fragTexCoord;
+layout(location = 3) in vec4 fragShadowCoord;
 
 layout(location = 0) out vec4 outColor;
-
-//A structure has a base alignment equal to the largest base alignment of any of its members, rounded up to a multiple of 16.
-layout(set = 0, binding = 1) uniform Camera {
-    vec3 pos;
-} camera;
 
 struct PointLight{
     float constant;
@@ -24,6 +20,10 @@ struct PointLight{
     vec3 diffuse;
     vec3 specular;
 };
+
+layout(set = 0, binding = 1) uniform Camera {
+    vec3 pos;
+} camera;
 layout(set = 0, binding = 2) uniform DirectionalLight {
 	vec3 direction;
 	vec3 ambient;
@@ -46,19 +46,32 @@ layout(set = 0, binding = 4) uniform SpotLight {
     vec3 diffuse;
     vec3 specular;
 } sLight;
+layout(set = 0, binding = 6) uniform sampler2D shadowMap;
 
 layout(set = 1, binding = 0) uniform ProcessingFlags {
 	bool alphaBlending;
 } flags;
-
 layout(set = 1, binding = 1) uniform sampler2D albedo;
 layout(set = 1, binding = 2) uniform sampler2D specularMap;
 layout(set = 1, binding = 3) uniform sampler2D normal;
 
+float GetShadowValue(vec4 shadowCoord) {
+	float shadow = 1.0;
+	if ( shadowCoord.z > -1.0 && shadowCoord.z < 1.0 ) {
+		float dist = texture(shadowMap, shadowCoord.st).r;
+		if ( shadowCoord.w > 0.0 && dist < (shadowCoord.z)) {
+			shadow = 0.0;
+		}
+	}
+	return shadow;
+}
+
 vec3 CalcDirLight(vec3 normal, vec3 viewDir) {
+    float isShadow = GetShadowValue(fragShadowCoord / fragShadowCoord.w);
+
     vec3 lightDir = normalize(-dLight.direction);
     // diffuse
-    float diff = max(dot(normal, lightDir), 0.0);
+    float diff = max(dot(normal, lightDir), 0.0) * isShadow;
     // specular
     vec3 reflectDir = reflect(-lightDir, normal);
     float spec = pow(max(dot(viewDir, reflectDir), 0.0), 64);
@@ -91,8 +104,7 @@ vec3 CalcPointLight(PointLight pLight, vec3 normal, vec3 fragPos, vec3 viewDir) 
 }
 
 // calculates the color when using a spot light.
-vec3 CalcSpotLight(vec3 normal, vec3 fragPos, vec3 viewDir)
-{
+vec3 CalcSpotLight(vec3 normal, vec3 fragPos, vec3 viewDir) {
     vec3 lightDir = normalize(sLight.position - fragPos);
     // diffuse
     float diff = max(dot(normal, lightDir), 0.0);

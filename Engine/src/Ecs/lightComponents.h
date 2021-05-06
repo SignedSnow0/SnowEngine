@@ -34,4 +34,16 @@ namespace SnowEngine {
 
 		void ImGuiDraw();
 	};
+
+	struct ShadowCastComponent : Component {
+		bool CastsShadow = true;
+
+		ShadowCastComponent() = default;
+		ShadowCastComponent(const ShadowCastComponent&) = default;
+		ShadowCastComponent(const bool& castsShadow) : CastsShadow(castsShadow) {}
+
+		operator const bool() { return CastsShadow; }
+
+		void ImGuiDraw();
+	};
 }

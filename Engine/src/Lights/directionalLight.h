@@ -16,6 +16,7 @@ namespace SnowEngine {
 		~DirectionalLight() = default;
 
 		inline void SetDirection(const glm::vec3& direction)	{ ubo.Direction = direction; }
+		inline glm::vec3 GetDirection()							{ return ubo.Direction; }
 		inline void SetAmbient(const glm::vec3& ambient)		{ ubo.Ambient = ambient; }
 		inline void SetDiffuse(const glm::vec3& diffuse)		{ ubo.Diffuse = diffuse; }
 		inline void SetSpecular(const glm::vec3& specular)		{ ubo.Specular = specular; }

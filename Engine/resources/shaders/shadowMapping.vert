@@ -13,10 +13,6 @@ layout (push_constant) uniform Model{
 	mat4 transform;
 } model;
 
-out gl_PerVertex {
-    vec4 gl_Position;   
-};
-
 void main() {
 	gl_Position = ubo.depthVP * model.transform * vec4(inPos, 1.0);
 }

@@ -42,6 +42,8 @@ namespace SnowEngine {
 		ModelComponent(const ModelComponent&) = default;
 		ModelComponent(Model* model) : model(model) {}
 
+		operator Model*() { return model; }
+
 		void ImGuiDraw();
 	};
 }

@@ -1,68 +1,91 @@
 #include "shadowMap.h"
 #include <array>
+#include <glm\gtc\matrix_transform.hpp>
 
 namespace SnowEngine {
-	ShadowMap::ShadowMap(Device& device) : device(device) {
+	ShadowMap::ShadowMap(Device& device, uint32_t matrixbinding, uint32_t imageBinding, VkShaderStageFlags matrixStage, VkShaderStageFlags imageStage) : device(device), imageLocation(imageBinding) {
 		CreateImageResources();
 		CreateRenderPass();
 		CreateFramebuffer();
 		CreateUniforms();
 		CreatePipeline();
+		CreateBindings(imageBinding, imageStage);
+
+		uBufferOut = new UniformBuffer<InUBO>(device, matrixStage, matrixbinding, inUbo, 3);
 	}
 
-	void ShadowMap::RenderShadowMap(uint32_t frame, const VkCommandBuffer* buffer, glm::mat4 LightVP, std::vector<Model*>& models) {
-		uBufferIn.Update(frame, { LightVP });
+	std::vector<VkWriteDescriptorSet> ShadowMap::GetDescriptorWrites(uint32_t frame, VkDescriptorSet dstSet)
+	{
+		std::vector<VkWriteDescriptorSet> writes;
+		writes.push_back(uBufferOut->CreateDescriptorWrite(frame, dstSet));
 
-		//{
-		//	VkCommandBufferBeginInfo beginInfo{};
-		//	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+		imageInfo.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+		imageInfo.imageView = shadowImageView;
+		imageInfo.sampler = shadowSampler;
 
-		//	vkBeginCommandBuffer(*buffer, &beginInfo);
-		//}
-		{
-			VkClearValue clearValue{};
-			clearValue.depthStencil = { 1.0f, 0 };
+		VkWriteDescriptorSet descriptorWrite{};
+		descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		descriptorWrite.dstSet = dstSet;
+		descriptorWrite.dstBinding = imageLocation;
+		descriptorWrite.dstArrayElement = 0;
+		descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		descriptorWrite.descriptorCount = 1;
+		descriptorWrite.pImageInfo = &imageInfo;
 
-			VkRenderPassBeginInfo beginInfo{};
-			beginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-			beginInfo.renderPass = renderPass;
-			beginInfo.framebuffer = framebuffer;
-			beginInfo.renderArea.extent.width = SHADOW_MAP_WIDTH;
-			beginInfo.renderArea.extent.height = SHADOW_MAP_HEIGHT;
-			beginInfo.clearValueCount = 1;
-			beginInfo.pClearValues = &clearValue;
+		writes.push_back(descriptorWrite);
 
-			vkCmdBeginRenderPass(*buffer, &beginInfo, VK_SUBPASS_CONTENTS_INLINE);
+		return writes;
+	}
 
-			VkViewport viewport{};
-			viewport.x = 0.0f;
-			viewport.y = 0.0f;
-			viewport.width = static_cast<float>(SHADOW_MAP_WIDTH);
-			viewport.height = static_cast<float>(SHADOW_MAP_HEIGHT);
-			viewport.minDepth = 0.0f;
-			viewport.maxDepth = 1.0f;
+	void ShadowMap::BeginRenderPass(uint32_t frame, VkCommandBuffer buffer, glm::mat4 LightVP) {
+		inUbo.LightVP = LightVP;
+		uBufferIn.Update(frame, inUbo);
 
-			vkCmdSetViewport(*buffer, 0, 1, &viewport);
+		VkClearValue clearValue{};
+		clearValue.depthStencil = { 1.0f, 0 };
 
-			VkRect2D scissor{};
-			scissor.offset = { 0, 0 };
-			scissor.extent = {SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT };
+		VkRenderPassBeginInfo beginInfo{};
+		beginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+		beginInfo.renderPass = renderPass;
+		beginInfo.framebuffer = framebuffer;
+		beginInfo.renderArea.extent.width = SHADOW_MAP_WIDTH;
+		beginInfo.renderArea.extent.height = SHADOW_MAP_HEIGHT;
+		beginInfo.clearValueCount = 1;
+		beginInfo.pClearValues = &clearValue;
 
-			vkCmdSetScissor(*buffer, 0, 1, &scissor);
+		vkCmdBeginRenderPass(buffer, &beginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-			vkCmdSetDepthBias(*buffer, 1.25f, 0.0f, 1.75f);
+		VkViewport viewport{};
+		viewport.x = 0.0f;
+		viewport.y = 0.0f;
+		viewport.width = static_cast<float>(SHADOW_MAP_WIDTH);
+		viewport.height = static_cast<float>(SHADOW_MAP_HEIGHT);
+		viewport.minDepth = 0.0f;
+		viewport.maxDepth = 1.0f;
 
-			vkCmdBindPipeline(*buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shadowPipeline->GetPipeline());		
-		}
-		//todo descriptorsets
-		vkCmdBindDescriptorSets(*buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shadowPipeline->GetLayout(), 0, 1, &inSets[frame], 0, nullptr);
-		for (auto model : models) {
-			glm::mat4 push = glm::mat4(1.0f);
-			vkCmdPushConstants(*buffer, shadowPipeline->GetLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), (void*)&push);
-			model->DrawShadow(*buffer);
-		}
+		vkCmdSetViewport(buffer, 0, 1, &viewport);
 
-		vkCmdEndRenderPass(*buffer);
+		VkRect2D scissor{};
+		scissor.offset = { 0, 0 };
+		scissor.extent = { SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT };
+
+		vkCmdSetScissor(buffer, 0, 1, &scissor);
+
+		vkCmdSetDepthBias(buffer, bias, 0.0f, slopeBias);
+
+		vkCmdBindPipeline(buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shadowPipeline->GetPipeline());
+
+		vkCmdBindDescriptorSets(buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shadowPipeline->GetLayout(), 0, 1, &inSets[frame], 0, nullptr);
+	}
+
+	void ShadowMap::EndRenderPass(uint32_t frame, VkCommandBuffer buffer) {
+		vkCmdEndRenderPass(buffer);
+
+		uBufferOut->Update(frame, inUbo);
+	}
+
+	void ShadowMap::RenderShadowMap(VkCommandBuffer buffer, Model* model) {
+		model->DrawShadow(buffer);	
 	}
 
 	void ShadowMap::CreateImageResources() {
@@ -220,4 +243,13 @@ namespace SnowEngine {
 
 		shadowPipeline = new Pipeline(device, config, "resources/shaders/spirv/shadowMapping.vert.spv", "");
 	}
+
+	void ShadowMap::CreateBindings(uint32_t binding, VkShaderStageFlags imageStage) {
+		imageBinding.binding = binding;
+		imageBinding.descriptorCount = 1;
+		imageBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		imageBinding.pImmutableSamplers = nullptr;
+		imageBinding.stageFlags = imageStage;
+	}
+
 }

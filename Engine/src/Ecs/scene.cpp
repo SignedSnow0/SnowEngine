@@ -7,7 +7,12 @@
 #include "generalComponents.h"
 #include "imguiLib/imgui.h"
 #include "application.h"
-#include "lightComponents.h">
+#include "lightComponents.h"
+
+#define GLM_FORCE_RADIANS
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 namespace SnowEngine {
 	static Entity selectedEntity;
@@ -33,6 +38,34 @@ namespace SnowEngine {
 	}
 
 	bool Scene::Update(uint32_t frame, float deltaTime) {
+		ImGuiDraw();
+
+		{
+			auto view = m_registry.view<PointLightComponent>();
+			for (auto entity : view) {
+				PointLight* light = view.get<PointLightComponent>(entity).Light;
+				light->Update(frame);
+			}
+		}
+		{
+			auto view = m_registry.view<SpotLightComponent>();
+			for (auto entity : view) {
+				SpotLight* light = view.get<SpotLightComponent>(entity).Light;
+				light->Update(frame);
+			}
+		}
+		{
+			auto view = m_registry.view<DirectionalLightComponent>();
+			for (auto entity : view) {
+				DirectionalLight* light = view.get<DirectionalLightComponent>(entity).Light;
+				light->Update(frame);
+			}
+		}
+
+		return true;
+	}
+
+	void Scene::ImGuiDraw() {
 		ImGui::Begin("Scene");
 
 		m_registry.each([&](auto entityID) {
@@ -49,14 +82,27 @@ namespace SnowEngine {
 			}
 			ImGui::EndPopup();
 		}
-		ImGui::End();		
+		ImGui::End();
 
 		ImGui::Begin("Components");
 		if (selectedEntity) { //se un entità è selezionata ne disegno i componenti
 			DrawComponents(selectedEntity);
 		}
 		ImGui::End();
-		return true;
+
+		if(ImGui::Begin("Shadow Settings")) {
+			Application& app = Application::Get();
+
+			float bias = app.shadowMap->GetConstantBias();
+			float slope = app.shadowMap->GetBiasSlope();
+
+			ImGui::SliderFloat("Bias", &bias, 0.0f, 10.0f);
+			ImGui::SliderFloat("Bias slope", &slope, 0.0f, 10.0f);
+
+			app.shadowMap->SetConstantBias(bias);
+			app.shadowMap->SetBiasSlope(slope);
+		}
+		ImGui::End();
 	}
 
 	void Scene::DrawEntityNode(Entity entity) {
@@ -113,7 +159,7 @@ namespace SnowEngine {
 		if (ImGui::BeginPopup("Select a component")) {
 			DrawMenuItem<TransformComponent>("Transform");
 			DrawMenuItem<ModelComponent>("Model");
-
+			DrawMenuItem<ShadowCastComponent>("Shadow");
 			ImGui::EndPopup();
 		}
 		
@@ -135,6 +181,10 @@ namespace SnowEngine {
 
 		if (entity.HasComponent<PointLightComponent>()) {
 			DrawComponent<PointLightComponent>(entity, "Point light");
+		}
+
+		if (entity.HasComponent<ShadowCastComponent>()) {
+			DrawComponent<ShadowCastComponent>(entity, "Shadow Casting");
 		}
 	}
 
@@ -185,42 +235,44 @@ namespace SnowEngine {
 			entity.RemoveComponent<T>();
 	}
 
-	void Scene::Draw(uint32_t frame, VkCommandBuffer buffer) {
+	void Scene::Draw(uint32_t frame, VkCommandBuffer buffer) {	
 		{
-			auto view = m_registry.view<PointLightComponent>();
-			for (auto entity : view) {
-				PointLight* light = view.get<PointLightComponent>(entity).Light;
-				light->Update(frame);
-			}
-		}
-		{
-			auto view = m_registry.view<SpotLightComponent>();
-			for (auto entity : view) {
-				SpotLight* light = view.get<SpotLightComponent>(entity).Light;
-				light->Update(frame);
-			}
-		}
-		{
-			auto view = m_registry.view<DirectionalLightComponent>();
-			for (auto entity : view) {
-				DirectionalLight* light = view.get<DirectionalLightComponent>(entity).Light;
-				light->Update(frame);
-			}
-		}
-		{
-			auto view = m_registry.view<ModelComponent, TransformComponent>(); //tutte le entità con un modelcomponent
-			Pipeline* pipeline = Application::Get().GetPipeline();
-			for (auto entity : view) {
-				bool found = false;
-				auto model = view.get<ModelComponent>(entity); //ottengo il component di una specifica entità
-				if (model.model != nullptr) {
-					vkCmdBindPipeline(buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->GetPipeline());
+			Application& app = Application::Get();
+			glm::mat4 viewMat = glm::lookAt(-app.dLight.GetDirection() * 200.0f, app.dLight.GetDirection(), glm::vec3(0.0f, 1.0f, 0.0f));
+			glm::mat4 proj = glm::perspective(glm::radians(45.0f), 1.0f, 0.001f, 1000.0f);
+			proj[1][1] *= -1;
+			
+			app.shadowMap->BeginRenderPass(frame, buffer, proj * viewMat);
 
+			auto view = m_registry.view<ModelComponent, TransformComponent, ShadowCastComponent>();
+			for (auto entity : view) {
+				glm::mat4 transform = view.get<TransformComponent>(entity);
+				vkCmdPushConstants(buffer, app.shadowMap->GetLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &transform);
+
+				ModelComponent mComponent = view.get<ModelComponent>(entity);
+				ShadowCastComponent sComponent = view.get<ShadowCastComponent>(entity);
+				if (sComponent)
+					app.shadowMap->RenderShadowMap(buffer, mComponent);
+			}
+			app.shadowMap->EndRenderPass(frame, buffer);		
+		}
+
+		{
+			Application::Get().BeginRenderPass(frame);
+
+			Pipeline* pipeline = Application::Get().GetPipeline();
+			vkCmdBindPipeline(buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->GetPipeline());
+
+			vkCmdBindDescriptorSets(buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->GetLayout(), 0, 1, &Application::Get().globalDescriptorSets[frame], 0, nullptr);//todo create descriptors in scene
+
+			auto view = m_registry.view <ModelComponent, TransformComponent>(); //tutte le entità con un modelcomponent
+			for (auto entity : view) {
+				Model* model = view.get<ModelComponent>(entity).model; //ottengo il component di una specifica entità
+				if (model != nullptr) {
 					glm::mat4 transform = view.get<TransformComponent>(entity);
 					vkCmdPushConstants(buffer, pipeline->GetLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &transform);
-					vkCmdBindDescriptorSets(buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->GetLayout(), 0, 1, &Application::Get().globalDescriptorSets[frame], 0, nullptr);//todo create descriptors in scene
 
-					model.model->Draw(buffer, frame, pipeline->GetLayout());
+					model->Draw(buffer, frame, pipeline->GetLayout());
 				}
 			}
 		}

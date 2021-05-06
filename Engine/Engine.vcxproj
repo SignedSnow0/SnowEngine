@@ -161,9 +161,6 @@
     <ClCompile Include="src\swapChain.cpp" />
     <ClCompile Include="src\window.cpp" />
   </ItemGroup>
-  <ItemGroup>
-    <None Include="resources\shaders\shadowMapping.frag" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

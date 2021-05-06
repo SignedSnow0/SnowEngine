@@ -34,4 +34,8 @@ namespace SnowEngine {
 		ImGui::DragFloat("Linear", &ubo->Linear, 0.1f, 0.0f, 0.0f, "%.2f");
 		ImGui::DragFloat("Quadratic", &ubo->Quadratic, 0.1f, 0.0f, 0.0f, "%.2f");
 	}
+
+	void ShadowCastComponent::ImGuiDraw() {
+		ImGui::Checkbox("Casts shadow", &CastsShadow);
+	}
 }

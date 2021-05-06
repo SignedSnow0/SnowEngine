@@ -23,6 +23,7 @@ namespace SnowEngine {
         scene = new Scene();
         OnResize();
         camera = new Camera(device, glm::vec3(1.0f));
+        shadowMap = new ShadowMap(device, 5, 6, VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT);
         CreateGloalDescriptorSets();
 
         VkPushConstantRange pushConstant{};
@@ -54,9 +55,7 @@ namespace SnowEngine {
         entities[2].AddComponent<PointLightComponent>(&pLight);
 
         entities.push_back(scene->CreateEntity("Spot light"));
-        entities[3].AddComponent<SpotLightComponent>(&sLight);
-
-        shadowMap = new ShadowMap(device);
+        entities[3].AddComponent<SpotLightComponent>(&sLight);      
     }
 
     Application::~Application() {
@@ -113,6 +112,8 @@ namespace SnowEngine {
 		bindings.push_back(dLight.GetBuffer()->GetLayoutBinding());
 		bindings.push_back(sLight.GetBuffer()->GetLayoutBinding());
 		bindings.push_back(pLight.GetBuffer()->GetLayoutBinding());
+        auto shadowBindings = shadowMap->GetLayoutBindings();
+        bindings.insert(bindings.end(), shadowBindings.begin(), shadowBindings.end());
 
         VkDescriptorSetLayoutCreateInfo createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -138,6 +139,8 @@ namespace SnowEngine {
 			descriptorWrites.push_back(dLight.GetBuffer()->CreateDescriptorWrite(i, globalDescriptorSets[i]));
 			descriptorWrites.push_back(sLight.GetBuffer()->CreateDescriptorWrite(i, globalDescriptorSets[i]));
 			descriptorWrites.push_back(pLight.GetBuffer()->CreateDescriptorWrite(i, globalDescriptorSets[i]));
+            auto shadowWrites = shadowMap->GetDescriptorWrites(i, globalDescriptorSets[i]);
+            descriptorWrites.insert(descriptorWrites.end(), shadowWrites.begin(), shadowWrites.end());
 
             vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
         }
@@ -146,12 +149,7 @@ namespace SnowEngine {
     void Application::Draw(uint32_t frame) {
         BeginCommandBuffer(frame);
 
-        std::vector<Model*> shadowCasters = { &startingEntity };
-        shadowMap->RenderShadowMap(frame, &commandBuffers[frame], camera->GetViewProj(), shadowCasters);
-
-        BeginRenderPass(frame);
         RecordCommandBuffer(frame);
-
         imguiLayer->EndFrame(commandBuffers[frame]);
 
         EndRenderPass(frame);
@@ -230,6 +228,19 @@ namespace SnowEngine {
 	}
 
 	void Application::RecordCommandBuffer(uint32_t i) {
+		/*glm::mat4 viewMat = glm::lookAt((-dLight.GetDirection() + camera->GetPos()) * 10.0f, camera->GetPos(), glm::vec3(0.0f, 1.0f, 0.0f));
+		glm::mat4 proj = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, 0.01f, 1000.0f);
+		proj[1][1] *= -1;
+
+		shadowMap->BeginRenderPass(i, &commandBuffers[i], proj * viewMat);
+
+		glm::mat4 transform = glm::scale(glm::mat4(1.0f), glm::vec3(0.1f));
+		vkCmdPushConstants(commandBuffers[i], shadowMap->GetLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &transform);
+
+		shadowMap->RenderShadowMap(&commandBuffers[i], &startingEntity);
+
+		shadowMap->EndRenderPass(i, &commandBuffers[i]);*/
+
         scene->Draw(i, commandBuffers[i]);
     }
 

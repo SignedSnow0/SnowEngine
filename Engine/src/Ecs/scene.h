@@ -19,6 +19,7 @@ namespace SnowEngine {
 		void AddPipeline(Pipeline* pipeline) { pipelines.push_back(pipeline); }
 	private:	
 		bool Update(uint32_t frame, float deltaTime);
+		void ImGuiDraw();
 		void DrawEntityNode(Entity entity);
 		void DrawComponents(Entity entity);
 		template<typename T>
