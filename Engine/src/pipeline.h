@@ -24,8 +24,10 @@ namespace SnowEngine {
 
             VkRenderPass                            renderPass          = nullptr;
             //Pair of destriptor layout and its order in shader bindings
-            std::map<int, VkDescriptorSetLayout>    layouts;
-            VkPushConstantRange*                    pushConstant = nullptr;
+            std::map<int, VkDescriptorSetLayout>                layouts;
+            VkPushConstantRange*                                pushConstant = nullptr;
+            std::vector<VkVertexInputAttributeDescription>      vAttributes;
+            std::optional<VkVertexInputBindingDescription>      vBindings;
         };
     public:
         Pipeline(Device& device, PipelineConfig& pipelineFixedLayout, std::string vertexPath, std::string fragmentPath);

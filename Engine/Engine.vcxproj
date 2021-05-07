@@ -125,6 +125,7 @@
     <ClInclude Include="src\pipeline.h" />
     <ClInclude Include="src\shader.h" />
     <ClInclude Include="src\ShadowMapping\shadowMap.h" />
+    <ClInclude Include="src\skybox.h" />
     <ClInclude Include="src\swapChain.h" />
     <ClInclude Include="src\window.h" />
   </ItemGroup>
@@ -158,6 +159,7 @@
     <ClCompile Include="src\pipeline.cpp" />
     <ClCompile Include="src\shader.cpp" />
     <ClCompile Include="src\ShadowMapping\shadowMap.cpp" />
+    <ClCompile Include="src\skybox.cpp" />
     <ClCompile Include="src\swapChain.cpp" />
     <ClCompile Include="src\window.cpp" />
   </ItemGroup>

@@ -230,6 +230,7 @@ namespace SnowEngine {
 		config.colorBlending.pAttachments = nullptr;
 
 		config.rasterizer.depthBiasEnable = VK_TRUE;
+		config.rasterizer.cullMode = VK_CULL_MODE_FRONT_BIT;
 
 		config.renderPass = renderPass;
 

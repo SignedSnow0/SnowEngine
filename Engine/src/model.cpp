@@ -126,17 +126,17 @@ namespace SnowEngine {
 
             std::vector<Texture*> diffuseMaps = LoadMaterialTextures(material, aiTextureType_DIFFUSE, "textureDiffuse", 1);
             if(diffuseMaps.size() == 0)
-                textures.push_back(new Texture(device, VK_SHADER_STAGE_FRAGMENT_BIT, 1, "resources/textures/white.png", 3));
+                textures.push_back(new Texture(device, VK_SHADER_STAGE_FRAGMENT_BIT, 1, "resources/textures/white.png"));
             textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
 
             std::vector<Texture*> specularMaps = LoadMaterialTextures(material, aiTextureType_SPECULAR, "textureSpecular", 2);
 			if (specularMaps.size() == 0)
-				textures.push_back(new Texture(device, VK_SHADER_STAGE_FRAGMENT_BIT, 2, "resources/textures/white.png", 3));
+				textures.push_back(new Texture(device, VK_SHADER_STAGE_FRAGMENT_BIT, 2, "resources/textures/white.png"));
             textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
 
             std::vector<Texture*> normalMaps = LoadMaterialTextures(material, aiTextureType_NORMALS, "textureNormals", 3);
 			if (normalMaps.size() == 0)
-				textures.push_back(new Texture(device, VK_SHADER_STAGE_FRAGMENT_BIT, 3, "resources/textures/white.png", 3));
+				textures.push_back(new Texture(device, VK_SHADER_STAGE_FRAGMENT_BIT, 3, "resources/textures/white.png"));
             textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
         }
 
@@ -161,7 +161,7 @@ namespace SnowEngine {
                 }
             }
             if (!skip) {
-                Texture* texture = new Texture(device, VK_SHADER_STAGE_FRAGMENT_BIT, binding, path + str.C_Str(), 3);
+                Texture* texture = new Texture(device, VK_SHADER_STAGE_FRAGMENT_BIT, binding, path + str.C_Str());
                 textures.push_back(texture);
                 texturesLoaded.push_back(texture);
             }    

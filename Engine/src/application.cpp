@@ -55,7 +55,9 @@ namespace SnowEngine {
         entities[2].AddComponent<PointLightComponent>(&pLight);
 
         entities.push_back(scene->CreateEntity("Spot light"));
-        entities[3].AddComponent<SpotLightComponent>(&sLight);      
+        entities[3].AddComponent<SpotLightComponent>(&sLight);
+
+        skybox = new Skybox(device, textures, 1, VK_SHADER_STAGE_FRAGMENT_BIT);
     }
 
     Application::~Application() {
@@ -228,19 +230,6 @@ namespace SnowEngine {
 	}
 
 	void Application::RecordCommandBuffer(uint32_t i) {
-		/*glm::mat4 viewMat = glm::lookAt((-dLight.GetDirection() + camera->GetPos()) * 10.0f, camera->GetPos(), glm::vec3(0.0f, 1.0f, 0.0f));
-		glm::mat4 proj = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, 0.01f, 1000.0f);
-		proj[1][1] *= -1;
-
-		shadowMap->BeginRenderPass(i, &commandBuffers[i], proj * viewMat);
-
-		glm::mat4 transform = glm::scale(glm::mat4(1.0f), glm::vec3(0.1f));
-		vkCmdPushConstants(commandBuffers[i], shadowMap->GetLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &transform);
-
-		shadowMap->RenderShadowMap(&commandBuffers[i], &startingEntity);
-
-		shadowMap->EndRenderPass(i, &commandBuffers[i]);*/
-
         scene->Draw(i, commandBuffers[i]);
     }
 

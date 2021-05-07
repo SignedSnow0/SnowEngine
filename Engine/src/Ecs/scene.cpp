@@ -259,7 +259,7 @@ namespace SnowEngine {
 
 		{
 			Application::Get().BeginRenderPass(frame);
-
+			Application::Get().skybox->Draw(frame, buffer, Application::Get().camera->GetView(), Application::Get().camera->GetProj());
 			Pipeline* pipeline = Application::Get().GetPipeline();
 			vkCmdBindPipeline(buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->GetPipeline());
 

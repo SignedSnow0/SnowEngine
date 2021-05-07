@@ -58,7 +58,7 @@ namespace SnowEngine {
 		//Given its details, creates a buffer and its memory
 		void			CreateBuffer(VkDeviceSize size, VkBufferUsageFlags bufferType, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
 		//
-		void			CreateImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
+		void			CreateImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory, VkImageType type = VK_IMAGE_TYPE_2D, VkImageCreateFlags flags = 0);
 	    //
 		VkImageView		CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
 		//

@@ -5,7 +5,7 @@
 #include <stb_image.h>
 
 namespace SnowEngine {
-    Texture::Texture(Device& device, VkShaderStageFlags shaderTarget, uint32_t binding, const std::string& path, size_t swapchainImagesCount) : device(device), swapchainImagesCount(swapchainImagesCount), binding(binding), path(path) {
+    Texture::Texture(Device& device, VkShaderStageFlags shaderTarget, uint32_t binding, const std::string& path) : device(device), binding(binding), path(path) {
         auto abs = std::filesystem::absolute(path);
         CreateTextureImage(abs.string());
         CreateViewAndSampler();

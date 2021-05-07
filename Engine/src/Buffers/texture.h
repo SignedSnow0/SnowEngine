@@ -9,7 +9,7 @@
 namespace SnowEngine {
     class Texture {
     public:
-        Texture(Device& device, VkShaderStageFlags shaderTarget, uint32_t binding, const std::string& path, size_t swapchainImagesCount);
+        Texture(Device& device, VkShaderStageFlags shaderTarget, uint32_t binding, const std::string& path);
         ~Texture();
 
         inline VkDescriptorSetLayoutBinding GetLayoutBinding() { return layoutBinding; }
@@ -31,7 +31,6 @@ namespace SnowEngine {
         VkImageView textureImageView;
         VkSampler textureSampler;
         VkDescriptorImageInfo imageInfo{};
-        size_t swapchainImagesCount;
         
         VkDescriptorSetLayoutBinding layoutBinding{};
         uint32_t binding;

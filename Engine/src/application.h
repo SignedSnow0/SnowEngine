@@ -14,6 +14,7 @@
 #include "Lights/pointLight.h"
 
 #include "ShadowMapping/shadowMap.h"
+#include "skybox.h";
 
 namespace SnowEngine {
     
@@ -24,6 +25,7 @@ namespace SnowEngine {
 
         inline static Application& Get() { return *app; }
         inline bool ImguiEnabled() { return imguiLayer->IsEnabled(); }
+        inline SwapChain& GetSwapchain() { return *swapChain; }
         //Starts the Update Render cycle
         void Run();
     public:
@@ -77,6 +79,9 @@ namespace SnowEngine {
         std::vector<Entity> entities;
 
         ShadowMap* shadowMap;
+
+        std::vector<std::string> textures = { "resources/textures/skybox/back.jpg", "resources/textures/skybox/bottom.jpg", "resources/textures/skybox/front.jpg", "resources/textures/skybox/left.jpg", "resources/textures/skybox/right.jpg", "resources/textures/skybox/top.jpg" };
+        Skybox* skybox;
 
         friend class Scene;
     };

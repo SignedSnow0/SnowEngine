@@ -31,16 +31,25 @@ namespace SnowEngine {
         if (fragmentShader != nullptr)
             shaderStages.push_back(fragmentShader->GetShaderStage());
 
-        auto vertexBindingDescription       = VertexBuffer::GetBindingDescription();
-        auto vertexAttributeDescriptions    = VertexBuffer::GetAttributeDescriptions();
-        
-        VkPipelineVertexInputStateCreateInfo vertexInputInfo{};     
-        vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-        vertexInputInfo.vertexBindingDescriptionCount    = 1;
-        vertexInputInfo.pVertexBindingDescriptions       = &vertexBindingDescription;
-        vertexInputInfo.vertexAttributeDescriptionCount  = static_cast<uint32_t>(vertexAttributeDescriptions.size());
-        vertexInputInfo.pVertexAttributeDescriptions     = vertexAttributeDescriptions.data();
-        
+		VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
+		vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+		vertexInputInfo.vertexBindingDescriptionCount = 1;
+		vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(config.vAttributes.size());
+		vertexInputInfo.pVertexAttributeDescriptions = config.vAttributes.data();
+
+        auto descs = VertexBuffer::GetBindingDescription();
+        auto vertexAttributeDescriptions = VertexBuffer::GetAttributeDescriptions();
+        if (config.vBindings.has_value()) {       
+            vertexInputInfo.pVertexBindingDescriptions = &config.vBindings.value();
+        }
+        else {
+            vertexInputInfo.pVertexBindingDescriptions = &descs;
+        }
+        if (config.vAttributes.size() == 0) {          
+			vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(vertexAttributeDescriptions.size());
+			vertexInputInfo.pVertexAttributeDescriptions = vertexAttributeDescriptions.data();
+        }
+
         //Indica delle possibili parti della pipeline che possono essere ricostruiti senza ricreare l`intera pipeline
         VkPipelineDynamicStateCreateInfo dynamicState{};
         dynamicState.sType              = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
