@@ -1,5 +1,5 @@
-#include "lightComponents.h"
-#include "componentUtils.hpp"
+#include "LightComponents.h"
+#include "ComponentUtils.hpp"
 
 namespace SnowEngine {
 	void DirectionalLightComponent::ImGuiDraw() {

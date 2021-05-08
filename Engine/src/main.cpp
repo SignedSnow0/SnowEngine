@@ -1,7 +1,7 @@
 #include <iostream>
 #include <exception>
 
-#include "application.h"
+#include "Core/Application.h"
 
 int main() {
     try {

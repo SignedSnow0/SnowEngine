@@ -1,17 +1,16 @@
-#include "generalComponents.h"
-
+#include "GeneralComponents.h"
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/quaternion.hpp>
-#include <imguiLib/imgui.h>
+#include <Core/ImguiLib/imgui.h>
 #include <imgui_internal.h>
 #include <entt.hpp>
 #include <nfd.h>
 
-#include "componentUtils.hpp"
+#include "ComponentUtils.hpp"
 
 namespace SnowEngine {
 	void TransformComponent::ImGuiDraw() {

@@ -1,6 +1,5 @@
 #pragma once
-
-#include "model.h"
+#include "Graphics/Model.h"
 
 namespace SnowEngine {
 	struct Component {

@@ -1,18 +1,15 @@
-#include "scene.h"
-
-#include <imguiLib/imgui.h>
-#include <imgui_internal.h>
-
-#include "entity.h"
-#include "generalComponents.h"
-#include "imguiLib/imgui.h"
-#include "application.h"
-#include "lightComponents.h"
-
+#include "Scene.h"
+#include "Core/ImguiLib/imgui.h"
+#include <imgui_internal.h> //must include imgui before imgui internal
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+
+#include "Entity.h"
+#include "GeneralComponents.h"
+#include "Core/Application.h"
+#include "LightComponents.h"
 
 namespace SnowEngine {
 	static Entity selectedEntity;

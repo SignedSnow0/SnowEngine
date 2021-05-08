@@ -1,5 +1,5 @@
 #pragma once
-#include "scene.h"
+#include "Scene.h"
 
 namespace SnowEngine {
 	class Entity {

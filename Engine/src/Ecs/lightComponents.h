@@ -1,8 +1,8 @@
 #pragma once
-#include "Lights/directionalLight.h"
-#include "Lights/pointLight.h"
-#include "Lights/spotLight.h"
-#include "generalComponents.h"
+#include "Graphics/Lights/DirectionalLight.h"
+#include "Graphics/Lights/PointLight.h"
+#include "Graphics/Lights/SpotLight.h"
+#include "GeneralComponents.h"
 
 namespace SnowEngine {
 	struct DirectionalLightComponent : Component {
