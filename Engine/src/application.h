@@ -59,7 +59,7 @@ namespace SnowEngine {
     private:
         static Application* app;
         
-        Window window{ 1920, 1080, "SnowEngine" };
+        Window window{ 1280, 720, "SnowEngine" };
         Device device{ window };
         std::unique_ptr<SwapChain> swapChain;
         std::vector<VkCommandBuffer> commandBuffers;
@@ -80,7 +80,7 @@ namespace SnowEngine {
 
         ShadowMap* shadowMap;
 
-        std::vector<std::string> textures = { "resources/textures/skybox/back.jpg", "resources/textures/skybox/bottom.jpg", "resources/textures/skybox/front.jpg", "resources/textures/skybox/left.jpg", "resources/textures/skybox/right.jpg", "resources/textures/skybox/top.jpg" };
+        std::vector<std::string> textures = { "resources/textures/skybox/right.jpg", "resources/textures/skybox/left.jpg", "resources/textures/skybox/top.jpg", "resources/textures/skybox/bottom.jpg", "resources/textures/skybox/front.jpg", "resources/textures/skybox/back.jpg" };
         Skybox* skybox;
 
         friend class Scene;

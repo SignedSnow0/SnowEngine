@@ -5,8 +5,8 @@ layout (location = 0) in vec3 inPos;
 layout (location = 0) out vec3 fragTexCoords;
 
 layout (binding = 0) uniform Camera{
-	mat4 proj;
 	mat4 view;
+	mat4 proj;
 } camera;
 
 void main() {

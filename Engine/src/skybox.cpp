@@ -7,48 +7,47 @@
 
 namespace SnowEngine {
 	static const std::vector<float> skyboxVertices = {
-		// positions          
-		-1.0f,  1.0f, -1.0f,
-		-1.0f, -1.0f, -1.0f,
-		 1.0f, -1.0f, -1.0f,
-		 1.0f, -1.0f, -1.0f,
-		 1.0f,  1.0f, -1.0f,
-		-1.0f,  1.0f, -1.0f,
+		-1000.0f,-1000.0f,-1000.0f,  // -X side
+		-1000.0f,-1000.0f, 1000.0f,
+		-1000.0f, 1000.0f, 1000.0f,
+		-1000.0f, 1000.0f, 1000.0f,
+		-1000.0f, 1000.0f,-1000.0f,
+		-1000.0f,-1000.0f,-1000.0f,
 
-		-1.0f, -1.0f,  1.0f,
-		-1.0f, -1.0f, -1.0f,
-		-1.0f,  1.0f, -1.0f,
-		-1.0f,  1.0f, -1.0f,
-		-1.0f,  1.0f,  1.0f,
-		-1.0f, -1.0f,  1.0f,
+		-1000.0f,-1000.0f,-1000.0f,  // -Z side
+		 1000.0f, 1000.0f,-1000.0f,
+		 1000.0f,-1000.0f,-1000.0f,
+		-1000.0f,-1000.0f,-1000.0f,
+		-1000.0f, 1000.0f,-1000.0f,
+		 1000.0f, 1000.0f,-1000.0f,
 
-		 1.0f, -1.0f, -1.0f,
-		 1.0f, -1.0f,  1.0f,
-		 1.0f,  1.0f,  1.0f,
-		 1.0f,  1.0f,  1.0f,
-		 1.0f,  1.0f, -1.0f,
-		 1.0f, -1.0f, -1.0f,
+		-1000.0f,-1000.0f,-1000.0f,  // -Y side
+		 1000.0f,-1000.0f,-1000.0f,
+		 1000.0f,-1000.0f, 1000.0f,
+		-1000.0f,-1000.0f,-1000.0f,
+		 1000.0f,-1000.0f, 1000.0f,
+		-1000.0f,-1000.0f, 1000.0f,
 
-		-1.0f, -1.0f,  1.0f,
-		-1.0f,  1.0f,  1.0f,
-		 1.0f,  1.0f,  1.0f,
-		 1.0f,  1.0f,  1.0f,
-		 1.0f, -1.0f,  1.0f,
-		-1.0f, -1.0f,  1.0f,
+		-1000.0f, 1000.0f,-1000.0f,  // +Y side
+		-1000.0f, 1000.0f, 1000.0f,
+		 1000.0f, 1000.0f, 1000.0f,
+		-1000.0f, 1000.0f,-1000.0f,
+		 1000.0f, 1000.0f, 1000.0f,
+		 1000.0f, 1000.0f,-1000.0f,
 
-		-1.0f,  1.0f, -1.0f,
-		 1.0f,  1.0f, -1.0f,
-		 1.0f,  1.0f,  1.0f,
-		 1.0f,  1.0f,  1.0f,
-		-1.0f,  1.0f,  1.0f,
-		-1.0f,  1.0f, -1.0f,
+		 1000.0f, 1000.0f,-1000.0f,  // +X side
+		 1000.0f, 1000.0f, 1000.0f,
+		 1000.0f,-1000.0f, 1000.0f,
+		 1000.0f,-1000.0f, 1000.0f,
+		 1000.0f,-1000.0f,-1000.0f,
+		 1000.0f, 1000.0f,-1000.0f,
 
-		-1.0f, -1.0f, -1.0f,
-		-1.0f, -1.0f,  1.0f,
-		 1.0f, -1.0f, -1.0f,
-		 1.0f, -1.0f, -1.0f,
-		-1.0f, -1.0f,  1.0f,
-		 1.0f, -1.0f,  1.0f
+		-1000.0f, 1000.0f, 1000.0f,  // +Z side
+		-1000.0f,-1000.0f, 1000.0f,
+		 1000.0f, 1000.0f, 1000.0f,
+		-1000.0f,-1000.0f, 1000.0f,
+		 1000.0f,-1000.0f, 1000.0f,
+		 1000.0f, 1000.0f, 1000.0f,
 	};
 
 	Skybox::Skybox(Device& device, std::vector<std::string> textures, uint32_t binding, VkShaderStageFlags shaderTarget) : device(device), binding(binding) {
@@ -83,7 +82,7 @@ namespace SnowEngine {
 	}
 
 	void Skybox::Draw(uint32_t frame, VkCommandBuffer buffer, const glm::mat4& view, const glm::mat4& proj) {
-		uBuffer.Update(frame, { view, proj });
+		uBuffer.Update(frame, { glm::mat4(glm::mat3(view)), proj });
 
 		vkCmdBindPipeline(buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->GetPipeline());
 
@@ -265,6 +264,7 @@ namespace SnowEngine {
 		Pipeline::PipelineConfig config = Pipeline::FillPipelineConfig();
 		config.renderPass = Application::Get().GetSwapchain().GetRenderPass();
 
+		config.rasterizer.cullMode = VK_CULL_MODE_FRONT_BIT;
 		config.layouts.insert({ 0, layout });
 		config.vAttributes = SkyVertexBuffer::GetAttributeDescriptions();
 		auto descs = SkyVertexBuffer::GetBindingDescription();

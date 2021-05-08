@@ -73,7 +73,7 @@ namespace SnowEngine {
 		front = glm::normalize(direction);
 
 		viewPosMatrix.view = glm::lookAt(pos, pos + front, up);
-		viewPosMatrix.proj = glm::perspective(glm::radians(45.0f), windowSize.first / windowSize.second, 0.1f, 1000.0f);
+		viewPosMatrix.proj = glm::perspective(glm::radians(45.0f), windowSize.first / windowSize.second, 0.0001f, 100000.0f);
 		viewPosMatrix.proj[1][1] *= -1;
 
 		uViewPos.Update(frame, viewPosMatrix);
