@@ -44,7 +44,7 @@ namespace SnowEngine {
         std::vector<VkImageView>    imageViews;
         std::vector<VkFramebuffer>  frameBuffers;
         VkImage                     depthImage;
-        VkDeviceMemory              depthImageMemory;
+        VmaAllocation               allocation;
         VkImageView                 depthImageView;
         
         VkSwapchainKHR  swapChain;     

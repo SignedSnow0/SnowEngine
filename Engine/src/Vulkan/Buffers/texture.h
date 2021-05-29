@@ -26,8 +26,8 @@ namespace SnowEngine {
     private:
         Device& device;
 
+        VmaAllocation allocation;
         VkImage textureImage;
-        VkDeviceMemory textureImageMemory;
         VkImageView textureImageView;
         VkSampler textureSampler;
         VkDescriptorImageInfo imageInfo{};

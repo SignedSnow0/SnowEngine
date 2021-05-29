@@ -15,9 +15,7 @@ namespace SnowEngine {
     }
     
     SwapChain::~SwapChain() {
-        vkDestroyImage(device, depthImage, nullptr);
-        vkDestroyImageView(device, depthImageView, nullptr);
-        vkFreeMemory(device, depthImageMemory, nullptr);
+        vmaDestroyImage(device, depthImage, allocation);
 
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
             vkDestroySemaphore(device, renderFinishedSemaphores[i], nullptr);
@@ -117,7 +115,7 @@ namespace SnowEngine {
     void SwapChain::CreateDepthResources() {
         VkFormat depthFormat = FindDepthFormat();
 
-        device.CreateImage(swapChainExtent.width, swapChainExtent.height, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depthImage, depthImageMemory);
+        device.CreateImage(swapChainExtent.width, swapChainExtent.height, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &depthImage, &allocation);
         depthImageView = device.CreateImageView(depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT); 
     }
 

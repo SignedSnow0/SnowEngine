@@ -14,6 +14,18 @@ namespace SnowEngine {
 		uBufferOut = new UniformBuffer<InUBO>(device, matrixStage, matrixbinding, inUbo, 3);
 	}
 
+	ShadowMap::~ShadowMap() {
+		delete uBufferOut;
+		delete shadowPipeline;
+
+		vkDestroyRenderPass(device, renderPass, nullptr);
+		vkDestroyFramebuffer(device, framebuffer, nullptr);
+		vmaDestroyImage(device, shadowImage, allocation);
+		vkDestroyImageView(device, shadowImageView, nullptr);
+		vkFreeDescriptorSets(device, device.GetDescriptorPool(), inSets.size(), inSets.data());
+
+	}
+
 	std::vector<VkWriteDescriptorSet> ShadowMap::GetDescriptorWrites(uint32_t frame, VkDescriptorSet dstSet)
 	{
 		std::vector<VkWriteDescriptorSet> writes;
@@ -89,7 +101,7 @@ namespace SnowEngine {
 	}
 
 	void ShadowMap::CreateImageResources() {
-		device.CreateImage(SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT, VK_FORMAT_D32_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, shadowImage, shadowMemory);
+		device.CreateImage(SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT, VK_FORMAT_D32_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &shadowImage, &allocation);
 
 		VkImageViewCreateInfo depthStencilView{};
 		depthStencilView.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;

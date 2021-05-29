@@ -18,6 +18,7 @@ namespace SnowEngine {
 		};
 	public:
 		Skybox(Device& device, std::vector<std::string> textures, uint32_t binding, VkShaderStageFlags shaderTarget);
+		~Skybox();
 
 		std::vector<VkWriteDescriptorSet> GetDescriptorWrite(uint32_t i, VkDescriptorSet descriptorSet);
 
@@ -56,7 +57,7 @@ namespace SnowEngine {
 		UniformBuffer<SkyboxUBO> uBuffer{ device, VK_SHADER_STAGE_VERTEX_BIT, 0, ubo, 3 };
 
 		VkImage image;
-		VkDeviceMemory imageMemory;
+		VmaAllocation allocation;
 		VkImageView imageView;
 		VkSampler imageSampler;
 

@@ -31,8 +31,7 @@ namespace SnowEngine
         Device& device;
         
         VkBuffer buffer;
-        VkMemoryRequirements memRequirements;
-        VkDeviceMemory bufferMemory;
+		VmaAllocation allocation;
     };
 
 
@@ -125,27 +124,25 @@ namespace SnowEngine {
 	Buffer<T>::Buffer(Device& device, VkBufferUsageFlags bufferType, const std::vector<T>& data) : device(device) {
 		VkDeviceSize bufferSize = sizeof(data[0]) * data.size();
 		VkBuffer stagingBuffer;
-		VkDeviceMemory stagingBufferMemory;
+		VmaAllocation stagingAlloc;
 
-		device.CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
+		device.CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &stagingBuffer, &stagingAlloc);
 
 		void* tmp;
-		vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &tmp); //permette di accedere a una regione di memoria di un oggetto
+		vmaMapMemory(device, stagingAlloc, &tmp);
 		memcpy(tmp, data.data(), (size_t)bufferSize); //copio i miei dati nel puntatore della memoria
-		vkUnmapMemory(device, stagingBufferMemory);
+		vmaUnmapMemory(device, stagingAlloc);
 
-		device.CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | bufferType, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, buffer, bufferMemory);
+		device.CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | bufferType, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &buffer, &allocation);
 
 		CopyBuffer(stagingBuffer, buffer, bufferSize);
 
-		vkDestroyBuffer(device, stagingBuffer, nullptr);
-		vkFreeMemory(device, stagingBufferMemory, nullptr);
+		vmaDestroyBuffer(device, stagingBuffer, stagingAlloc);
 	}
 
 	template<typename T>
 	Buffer<T>::~Buffer() {
-		vkDestroyBuffer(device, buffer, nullptr);
-		vkFreeMemory(device, bufferMemory, nullptr);
+		vmaDestroyBuffer(device, buffer, allocation);
 	}
 
 	template<typename T>

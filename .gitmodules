@@ -15,3 +15,6 @@
 [submodule "Engine/external/imguizmo"]
 	path = Engine/external/imguizmo
 	url = https://github.com/CedricGuillemet/ImGuizmo.git
+[submodule "Engine/external/vma"]
+	path = external/vma
+	url = https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git

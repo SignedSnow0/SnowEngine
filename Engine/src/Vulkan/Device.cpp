@@ -5,7 +5,8 @@
 #include <set>
 #include <array>
 
-namespace SnowEngine {
+namespace SnowEngine
+{
 	Device* Device::currentDevice;
 
     static const std::vector<const char*> validationLayers = {
@@ -18,7 +19,8 @@ namespace SnowEngine {
 		VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME
 	};
 
-	VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger) {
+	VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger)
+	{
 		//visto che la funzione è di un estensione non viene caricata automaticamente e dobbiamo usare questa funzione per trovarne il puntatore
 		auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
 		if (func != nullptr)
@@ -28,18 +30,21 @@ namespace SnowEngine {
 	}
 
 	//                                                       importanza del messaggio         |   indica se il messaggio è un errore o uso non ottimale | messaggio + oggetti chiave + numero oggetti chiave
-	VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData) {
+	VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
+	{
 		std::cerr << "[Validation layer]: " << pCallbackData->pMessage << std::endl;
 		return VK_FALSE; //indica se abortire o meno la funzione che ha causato l`errore
 	}
 
-	void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator) {
+	void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator)
+	{
 		auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
 		if (func != nullptr)
 			func(instance, debugMessenger, pAllocator);
 	}
 
-	Device::Device(Window& window) : window(window) {
+	Device::Device(Window& window) : window(window)
+	{
 		InitInstance();
 		SetupValidationCallbacks();
 		CreateSurface();
@@ -49,11 +54,13 @@ namespace SnowEngine {
 		CreateDescriptorPool();
 
 		currentDevice = this;
-
+		
 		LoadExtensionFunctions();
+		CreateAllocator();
 	}
 
-	Device::~Device() {
+	Device::~Device()
+	{
 		vkDestroyDescriptorPool(device, descriptorPool, nullptr);
 		vkDestroyDescriptorPool(device, imguiPool, nullptr);
 
@@ -69,7 +76,8 @@ namespace SnowEngine {
 		vkDestroyInstance(instance, nullptr);
 	}
 
-	VkCommandBuffer Device::BeginSingleTimeCommands() {
+	VkCommandBuffer Device::BeginSingleTimeCommands()
+	{
 		VkCommandBufferAllocateInfo allocInfo{};
 		allocInfo.sType					= VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 		allocInfo.level					= VK_COMMAND_BUFFER_LEVEL_PRIMARY;
@@ -88,7 +96,8 @@ namespace SnowEngine {
 		return commandBuffer;
 	}
 
-	void Device::CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) {
+	void Device::CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) 
+	{
 		VkCommandBuffer commandBuffer = BeginSingleTimeCommands();
 
 		VkBufferCopy copyRegion{};
@@ -98,33 +107,26 @@ namespace SnowEngine {
 		EndSingleTimeCommands(commandBuffer);
 	}
 
-	void Device::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags bufferType, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory) {
+	void Device::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags bufferType, VkMemoryPropertyFlags properties, VkBuffer* buffer, VmaAllocation* allocation)
+	{
 		VkBufferCreateInfo bufferInfo{};
-		bufferInfo.sType		= VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-		bufferInfo.size			= size;
-		bufferInfo.usage		= bufferType;
-		bufferInfo.sharingMode	= VK_SHARING_MODE_EXCLUSIVE;
+		bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+		bufferInfo.size = size;
+		bufferInfo.usage = bufferType;
+		bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-		if (vkCreateBuffer(device, &bufferInfo, nullptr, &buffer) != VK_SUCCESS)
-			throw std::runtime_error("Failed to create buffer!");
+		VmaAllocationCreateInfo allocInfo{};
+		allocInfo.requiredFlags = properties;
+		if (bufferType == VK_BUFFER_USAGE_TRANSFER_SRC_BIT)
+			allocInfo.usage = VMA_MEMORY_USAGE_CPU_COPY;
+		else if (VK_BUFFER_USAGE_TRANSFER_DST_BIT)
+			allocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
 
-		VkMemoryRequirements memRequirements;
-		vkGetBufferMemoryRequirements(device, buffer, &memRequirements);
-
-		VkMemoryAllocateInfo allocInfo{}; //dopo aver creato un buffer ne trovo una porzione di memoria adatta sulla gpu
-		allocInfo.sType				= VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-		allocInfo.allocationSize	= memRequirements.size;
-		allocInfo.memoryTypeIndex	= FindMemoryType(memRequirements.memoryTypeBits, properties);
-
-		if (vkAllocateMemory(device, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS)
-			throw std::runtime_error("Failed to allocate buffer memory!");
-
-		vkBindBufferMemory(device, buffer, bufferMemory, 0); //accedo al buffer per inserirne i dati  
+		vmaCreateBuffer(allocator, &bufferInfo, &allocInfo, buffer, allocation, nullptr);
 	}
 
-	void Device::CreateImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory, VkImageType type, VkImageCreateFlags flags) {
-		
-		
+	void Device::CreateImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage* image, VmaAllocation* allocation, VkImageType type, VkImageCreateFlags flags)
+	{
 		VkImageCreateInfo imageInfo{};
 		imageInfo.sType			= VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
 		imageInfo.imageType		= type;
@@ -140,28 +142,18 @@ namespace SnowEngine {
 		imageInfo.samples		= VK_SAMPLE_COUNT_1_BIT;
 		imageInfo.sharingMode	= VK_SHARING_MODE_EXCLUSIVE;
 		imageInfo.flags			= flags;
-
+		
 		if (flags & VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT)
 			imageInfo.arrayLayers = 6;
 
-		if (vkCreateImage(device, &imageInfo, nullptr, &image) != VK_SUCCESS)
-			throw std::runtime_error("Failed to create image!");
+		VmaAllocationCreateInfo allocInfo{};
+		allocInfo.requiredFlags = properties;
 
-		VkMemoryRequirements memRequirements;
-		vkGetImageMemoryRequirements(device, image, &memRequirements);
-
-		VkMemoryAllocateInfo allocInfo{};
-		allocInfo.sType				= VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-		allocInfo.allocationSize	= memRequirements.size;
-		allocInfo.memoryTypeIndex	= FindMemoryType(memRequirements.memoryTypeBits, properties);
-
-		if (vkAllocateMemory(device, &allocInfo, nullptr, &imageMemory) != VK_SUCCESS)
-			throw std::runtime_error("Failed to allocate image memory!");
-
-		vkBindImageMemory(device, image, imageMemory, 0);
+		vmaCreateImage(allocator, &imageInfo, &allocInfo, image, allocation, nullptr);
 	}
 
-	VkImageView Device::CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags) {
+	VkImageView Device::CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags) 
+	{
 		VkImageViewCreateInfo viewInfo{};
 		viewInfo.sType								= VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 		viewInfo.image								= image;
@@ -180,7 +172,8 @@ namespace SnowEngine {
 		return imageView;
 	}
 
-	void Device::EndSingleTimeCommands(VkCommandBuffer commandBuffer) {
+	void Device::EndSingleTimeCommands(VkCommandBuffer commandBuffer) 
+	{
 		vkEndCommandBuffer(commandBuffer);
 
 		VkSubmitInfo submitInfo{};
@@ -194,7 +187,8 @@ namespace SnowEngine {
 		vkFreeCommandBuffers(device, commandPool, 1, &commandBuffer);
 	}
 
-	VkFormat Device::FindSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) {
+	VkFormat Device::FindSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features)
+	{
 		for (VkFormat format : candidates) {
 			VkFormatProperties props;
 			vkGetPhysicalDeviceFormatProperties(physicalDevice, format, &props);
@@ -208,7 +202,8 @@ namespace SnowEngine {
 		throw std::runtime_error("Failed to find supported format!");
 	}
 
-	bool Device::CheckDeviceExtensionsSupport(VkPhysicalDevice device) {
+	bool Device::CheckDeviceExtensionsSupport(VkPhysicalDevice device)
+	{
 		uint32_t extensionCount;
 		vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
 		std::vector<VkExtensionProperties> availableExtensions(extensionCount);
@@ -222,7 +217,8 @@ namespace SnowEngine {
 		return requiredExtensions.empty();
 	}
 
-	bool Device::CheckValidationLayerSupport() {
+	bool Device::CheckValidationLayerSupport()
+	{
 		uint32_t layerCount;
 		vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
 		std::vector<VkLayerProperties> availableLayers(layerCount);
@@ -243,7 +239,8 @@ namespace SnowEngine {
 		return true;
 	}
 
-	void Device::CreateCommandPool() {
+	void Device::CreateCommandPool()
+	{
 		QueueFamilyIndices queueFamilyIndices = FindQueueFamilies(physicalDevice);
 
 		VkCommandPoolCreateInfo poolInfo{};
@@ -255,7 +252,8 @@ namespace SnowEngine {
 			throw std::runtime_error("failed to create command pool!");
 	}
 
-	void Device::CreateDescriptorPool() {
+	void Device::CreateDescriptorPool() 
+	{
 		std::array<VkDescriptorPoolSize, 3> poolSizes{};
 		poolSizes[0].type				= VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 		poolSizes[0].descriptorCount	= 1000;
@@ -298,7 +296,8 @@ namespace SnowEngine {
 			throw std::runtime_error("Failed to create descriptor pool!");
 	}
 
-	void Device::CreateLogicalDevice() {
+	void Device::CreateLogicalDevice() 
+	{
 		float queuePriority	= 1.0f; //ordine di esecuzione di più queue dello stesso tipo 0.0f - 1.0f
 		QueueFamilyIndices indices = FindQueueFamilies(physicalDevice);
 
@@ -351,7 +350,8 @@ namespace SnowEngine {
 		window.CreateWindowSurface(instance, &surface);
 	}
 
-	void Device::FillDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo) {
+	void Device::FillDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo)
+	{
 		createInfo					= {};
 		createInfo.sType			= VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
 		createInfo.messageSeverity	= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
@@ -360,7 +360,8 @@ namespace SnowEngine {
 		createInfo.pUserData		= nullptr; // Optional
 	}
 
-	uint32_t Device::FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) {
+	uint32_t Device::FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties)
+	{
 		VkPhysicalDeviceMemoryProperties memProperties;
 		vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
 
@@ -371,7 +372,8 @@ namespace SnowEngine {
 		throw std::runtime_error("Failed to find suitable memory type!");
 	}
 
-	Device::QueueFamilyIndices Device::FindQueueFamilies(VkPhysicalDevice device) {
+	Device::QueueFamilyIndices Device::FindQueueFamilies(VkPhysicalDevice device) 
+	{
 		QueueFamilyIndices indices;
 
 		uint32_t queueFamilyCount = 0; //otteniamo tutte le famiglie disponibili per il device
@@ -399,7 +401,8 @@ namespace SnowEngine {
 		return indices;
 	}
 
-	void Device::GetAvailableExtensions() {
+	void Device::GetAvailableExtensions()
+	{
 		uint32_t extensionCount = 0;
 		vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
 		std::vector<VkExtensionProperties> extensions(extensionCount);
@@ -410,7 +413,8 @@ namespace SnowEngine {
 			std::cout << '\t' << extension.extensionName << '\n';
 	}
 
-	std::vector<const char*> Device::GetRequiredExtension() {
+	std::vector<const char*> Device::GetRequiredExtension()
+	{
 		uint32_t glfwExtensionCount = 0;
 		const char** glfwExtensions;
 		glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
@@ -423,7 +427,8 @@ namespace SnowEngine {
 		return extensions;
 	}
 
-	void Device::InitInstance() {
+	void Device::InitInstance()
+	{
 		VkApplicationInfo appInfo{};
 		appInfo.sType				= VK_STRUCTURE_TYPE_APPLICATION_INFO;
 		appInfo.pApplicationName	= "No name";
@@ -461,7 +466,8 @@ namespace SnowEngine {
 		GetAvailableExtensions();
 	}
 
-	bool Device::IsDeviceSuitable(VkPhysicalDevice device) {
+	bool Device::IsDeviceSuitable(VkPhysicalDevice device) 
+	{
 		QueueFamilyIndices indices = FindQueueFamilies(device);
 
 		bool extensionsSupported = CheckDeviceExtensionsSupport(device);
@@ -478,7 +484,8 @@ namespace SnowEngine {
 		return indices.IsComplete() && extensionsSupported && swapChainAdequate && supportedFeatures.samplerAnisotropy;
 	}
 
-	SwapChainSupportDetails Device::QuerySwapChainSupport(VkPhysicalDevice device) {
+	SwapChainSupportDetails Device::QuerySwapChainSupport(VkPhysicalDevice device) 
+	{
 		SwapChainSupportDetails details;
 
 		vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.capabilities); //ottengo le capabilities
@@ -500,7 +507,8 @@ namespace SnowEngine {
 		return details;
 	}
 
-	void SnowEngine::Device::SelectPhysicalDevice() {
+	void SnowEngine::Device::SelectPhysicalDevice() 
+	{
 		uint32_t deviceCount = 0;
 		vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
 		if (deviceCount == 0)
@@ -514,7 +522,7 @@ namespace SnowEngine {
 				break;
 			}
 
-		if (physicalDevice == VK_NULL_HANDLE) {
+		if (physicalDevice == VK_NULL_HANDLE){
 			throw std::runtime_error("Failed to find a suitable GPU!");
 		}
 		uint32_t extensionsCount;
@@ -527,7 +535,8 @@ namespace SnowEngine {
 			std::cout << '\t' << extension.extensionName << '\n';
 	}
 
-	void Device::SetupValidationCallbacks() {
+	void Device::SetupValidationCallbacks()
+	{
 		if (!enableValidationLayers) return;
 
 		VkDebugUtilsMessengerCreateInfoEXT createInfo;
@@ -537,7 +546,19 @@ namespace SnowEngine {
 			throw std::runtime_error("Failed to set up debug messenger!");
 	}
 
-	void Device::LoadExtensionFunctions() {
+	void Device::LoadExtensionFunctions() 
+	{
 		vkCmdSetCullMode = (PFN_vkCmdSetCullModeEXT)vkGetInstanceProcAddr(instance, "vkCmdSetCullModeEXT");
+	}
+
+	void Device::CreateAllocator()
+	{
+		VmaAllocatorCreateInfo createInfo{};
+		createInfo.vulkanApiVersion = VK_API_VERSION_1_0;
+		createInfo.physicalDevice	= physicalDevice;
+		createInfo.device			= device;
+		createInfo.instance			= instance;
+
+		vmaCreateAllocator(&createInfo, &allocator);
 	}
 }

@@ -28,7 +28,7 @@ namespace SnowEngine {
 		VkDescriptorSetLayoutBinding layoutBinding{};
 
 		std::vector<VkBuffer> uniformBuffers;
-		std::vector<VkDeviceMemory> uniformBuffersMemory;
+		std::vector<VmaAllocation> uniformBuffersAllocations;
 
 		size_t swapchainImagesCount;
 		uint32_t binding;
@@ -49,17 +49,16 @@ namespace SnowEngine {
 	template<typename T>
 	UniformBuffer<T>::~UniformBuffer() {
 		for (size_t i = 0; i < swapchainImagesCount; i++) {
-			vkDestroyBuffer(device, uniformBuffers[i], nullptr);
-			vkFreeMemory(device, uniformBuffersMemory[i], nullptr);
+			vmaDestroyBuffer(device, uniformBuffers[i], uniformBuffersAllocations[i]);
 		}
 	}
 
 	template<typename T>
 	void UniformBuffer<T>::Update(uint32_t imageIndex, const T& data) {
 		void* tmp;
-		vkMapMemory(device, uniformBuffersMemory[imageIndex], 0, sizeof(data), 0, &tmp);
+		vmaMapMemory(device, uniformBuffersAllocations[imageIndex], &tmp);
 		memcpy(tmp, &data, sizeof(data));
-		vkUnmapMemory(device, uniformBuffersMemory[imageIndex]);
+		vmaUnmapMemory(device, uniformBuffersAllocations[imageIndex]);
 	}
 
 	template<typename T>
@@ -96,9 +95,9 @@ namespace SnowEngine {
 		VkDeviceSize bufferSize = sizeof(T);
 
 		uniformBuffers.resize(swapchainImagesCount);
-		uniformBuffersMemory.resize(swapchainImagesCount);
+		uniformBuffersAllocations.resize(swapchainImagesCount);
 
 		for (size_t i = 0; i < swapchainImagesCount; i++)
-			device.CreateBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, uniformBuffers[i], uniformBuffersMemory[i]);
+			device.CreateBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &uniformBuffers[i], &uniformBuffersAllocations[i]);
 	}
 }

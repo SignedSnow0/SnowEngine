@@ -2,6 +2,8 @@
 #include <vector>
 #include <optional>
 
+#include <vk_mem_alloc.h>
+
 #include "Core/Window.h"
 
 namespace SnowEngine {
@@ -27,6 +29,7 @@ namespace SnowEngine {
 
 		//Returns the VkDevice
 		inline operator VkDevice() { return GetDevice(); }
+		inline operator VmaAllocator() { return allocator; }
 
 		inline static Device& Get() { return *currentDevice; }
 		inline VkInstance					GetInstance()			{ return instance; }
@@ -56,9 +59,9 @@ namespace SnowEngine {
 		//
 		void			CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 		//Given its details, creates a buffer and its memory
-		void			CreateBuffer(VkDeviceSize size, VkBufferUsageFlags bufferType, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
+		void			CreateBuffer(VkDeviceSize size, VkBufferUsageFlags bufferType, VkMemoryPropertyFlags properties, VkBuffer* buffer, VmaAllocation* allocation);
 		//
-		void			CreateImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory, VkImageType type = VK_IMAGE_TYPE_2D, VkImageCreateFlags flags = 0);
+		void			CreateImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage* image, VmaAllocation* allocation, VkImageType type = VK_IMAGE_TYPE_2D, VkImageCreateFlags flags = 0);
 	    //
 		VkImageView		CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
 		//
@@ -104,12 +107,13 @@ namespace SnowEngine {
 		//Creates the manger for the validation layers
 		void						SetupValidationCallbacks();	
 		void						LoadExtensionFunctions();
-
+		void						CreateAllocator();
 	private:
 		static Device* currentDevice;
 
 		Window& window;
 		
+		VmaAllocator				allocator;
 		VkCommandPool				commandPool;
 		VkDebugUtilsMessengerEXT	debugMessenger; //handle della funzione di callback
 		VkDescriptorPool			descriptorPool;

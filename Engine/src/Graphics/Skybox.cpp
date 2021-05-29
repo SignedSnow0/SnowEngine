@@ -61,6 +61,15 @@ namespace SnowEngine {
 		vBuffer = new SkyVertexBuffer(device, skyboxVertices);
 	}
 
+	Skybox::~Skybox() {
+		delete vBuffer;
+		delete pipeline;
+
+		vmaDestroyImage(device, image, allocation);
+		vkDestroyImageView(device, imageView, nullptr);
+		vkFreeDescriptorSets(device, device.GetDescriptorPool(), descriptorSets.size(), descriptorSets.data());
+	}
+
 	std::vector<VkWriteDescriptorSet> Skybox::GetDescriptorWrite(uint32_t i, VkDescriptorSet descriptorSet) {
 		std::vector<VkWriteDescriptorSet> writes;
 		imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -101,28 +110,28 @@ namespace SnowEngine {
 			throw std::runtime_error("Failed to load cubemap images!");
 
 		VkBuffer stagingBuffer;
-		VkDeviceMemory stagingBufferMemory;
-		device.CreateBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
+		VmaAllocation stagingBufferAllocation;
+		device.CreateBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &stagingBuffer, &stagingBufferAllocation);
 
 		stbi_image_free(pixels);
-		for (uint32_t i = 0; i < textures.size(); i++) {
-			stbi_uc* pixels = stbi_load(textures[i].c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
-			void* tmp; //metto i pixel dell`immagine in un buffer
-			uint32_t offset = texWidth * texHeight * 4 * i;
-			vkMapMemory(device, stagingBufferMemory, offset, VK_WHOLE_SIZE, 0, &tmp);
-			memcpy(tmp, pixels, static_cast<size_t>(imageSize) / 6);
-			vkUnmapMemory(device, stagingBufferMemory);
-			stbi_image_free(pixels);
-		}
 
-		device.CreateImage(texWidth, texHeight, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, image, imageMemory, VK_IMAGE_TYPE_2D, VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT);
+		void* tmp;
+		vmaMapMemory(device, stagingBufferAllocation, &tmp);
+		for (uint32_t i = 0; i < textures.size(); i++) {
+			char* data = (char*)tmp;
+			stbi_uc* texture = stbi_load(textures[i].c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+			memcpy(data + (imageSize / 6) * i, texture, static_cast<size_t>(imageSize) / 6);
+			stbi_image_free(texture);
+		}
+		vmaUnmapMemory(device, stagingBufferAllocation);
+
+		device.CreateImage(texWidth, texHeight, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &image, &allocation, VK_IMAGE_TYPE_2D, VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT);
 
 		TransitionImageLayout(image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 		CopyBufferToImage(stagingBuffer, image, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
 		TransitionImageLayout(image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
-		vkDestroyBuffer(device, stagingBuffer, nullptr);
-		vkFreeMemory(device, stagingBufferMemory, nullptr);
+		vmaDestroyBuffer(device, stagingBuffer, stagingBufferAllocation);
 	}
 
 	void Skybox::TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout) {

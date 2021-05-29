@@ -22,6 +22,7 @@ namespace SnowEngine {
 		};
 	public:
 		ShadowMap(Device& device, uint32_t matrixbinding, uint32_t imageBinding, VkShaderStageFlags matrixStage, VkShaderStageFlags imageStage);
+		~ShadowMap();
 
 		inline void SetConstantBias(const float& value) { bias = value; }
 		inline void SetBiasSlope(const float& value) { slopeBias = value; }
@@ -56,7 +57,7 @@ namespace SnowEngine {
 		VkDescriptorSetLayoutBinding imageBinding;
 		VkImage shadowImage;
 		VkImageView shadowImageView;
-		VkDeviceMemory shadowMemory;
+		VmaAllocation allocation;
 		VkSampler shadowSampler;
 
 		InUBO inUbo;
