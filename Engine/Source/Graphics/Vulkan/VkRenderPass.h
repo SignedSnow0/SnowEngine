@@ -27,8 +27,8 @@ namespace SnowEngine
 		void CreateSubpasses();
 		void CreateDependencies(vk::PipelineStageFlags pipelineStage, vk::AccessFlags access);
 		void CreateRenderPass();
-		void CreateFramebuffers(const std::vector<vk::ImageView>& views);
-		void CreateImages(u32 frameCount);
+		void CreateFramebuffer(vk::ImageView view, u32 currentFrame);
+		void CreateImage(u32 currentFrame);
 
 		std::vector<vk::AttachmentDescription> mAttachments;
 		std::vector<vk::SubpassDescription> mSubpasses;

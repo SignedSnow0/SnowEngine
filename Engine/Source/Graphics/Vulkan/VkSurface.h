@@ -1,4 +1,5 @@
 #pragma once
+#include <functional>
 #include <vulkan/vulkan.hpp>
 #include "Graphics/Rhi/Surface.h"
 #include "Core/Window.h"
@@ -17,11 +18,12 @@ namespace SnowEngine
 		std::shared_ptr<const Window> GetWindow() const;
 		vk::CommandBuffer GetCommandBuffer() const;
 		u32 GetCurrentFrame() const override;
-
+		
 		void Begin() override;
 		void End() override;
+		void SubmitPostFrameQueue(const std::function<void(u32 frameIndex)>& func);
 
-		static const VkSurface* BoundSurface();
+		static VkSurface* BoundSurface();
 
 	private:
 		void CreateSurface();
@@ -29,6 +31,7 @@ namespace SnowEngine
 		void CreateSwapchain();
 		void CreateCommandPool();
 		void CreateFrameData();
+		void FlushPostSubmitQueue();
 
 		struct FrameData
 		{
@@ -51,7 +54,8 @@ namespace SnowEngine
 		vk::CommandPool mCommandPool;
 		vk::SwapchainKHR mSwapchain;
 		std::shared_ptr<const Window> mWindow;
+		std::vector<std::pair<u32, std::function<void(u32 frameIndex)>>> mPostSubmitQueue;
 
-		static const VkSurface* sBoundSurface;
+		static VkSurface* sBoundSurface;
 	};
 }

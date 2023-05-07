@@ -21,7 +21,7 @@ namespace SnowEngine
 		void CreateDescriptorPool();
 		void CreateSampler();
 		void InitImGui();
-		void CreateSceneImages();
+		void CreateSceneImage(const VkImage& image, u32 frameIndex);
 
 		vk::DescriptorPool mDescriptorPool;
 		VkRenderPass mRenderPass;

@@ -12,7 +12,10 @@ namespace SnowEngine
 		CreateDescriptorPool();
 		InitImGui();
 		CreateSampler();
-		CreateSceneImages();
+
+		mSceneImages.resize(mScene->Images().size());
+		for (u32 i = 0; i < mScene->Images().size(); i++)
+			CreateSceneImage(*mScene->Images()[i], i);
 	}
 
 	VkGui::~VkGui()
@@ -40,7 +43,16 @@ namespace SnowEngine
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, { 0.0f, 0.0f });
 		if (ImGui::Begin("Scene"))
 		{
-			ImGui::Image(mSceneImages[mSurface->GetCurrentFrame()], ImGui::GetContentRegionAvail());
+			if (mScene->Width() != ImGui::GetContentRegionAvail().x || mScene->Height() != ImGui::GetContentRegionAvail().y)
+			{
+				mScene->Resize(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y);
+				VkSurface::BoundSurface()->SubmitPostFrameQueue([this](const u32 frameIndex)
+				{
+					CreateSceneImage(*mScene->Images()[frameIndex], frameIndex);
+				});
+			}
+			else
+			 ImGui::Image(mSceneImages[mSurface->GetCurrentFrame()], ImGui::GetContentRegionAvail());
 		}
 		ImGui::PopStyleVar(1);
 
@@ -127,11 +139,8 @@ namespace SnowEngine
 		ImGui_ImplVulkan_DestroyFontUploadObjects();
 	}
 
-	void VkGui::CreateSceneImages()
+	void VkGui::CreateSceneImage(const VkImage& image, const u32 frameIndex)
 	{
-		mSceneImages.clear();
-		mSceneImages.reserve(mScene->Images().size());
-		for (const auto& image : mScene->Images())
-			mSceneImages.emplace_back(ImGui_ImplVulkan_AddTexture(mSampler, image->GetView(), static_cast<VkImageLayout>(image->GetLayout())));
+		mSceneImages[frameIndex] = ImGui_ImplVulkan_AddTexture(mSampler, image.GetView(), static_cast<VkImageLayout>(image.GetLayout()));
 	}
 }

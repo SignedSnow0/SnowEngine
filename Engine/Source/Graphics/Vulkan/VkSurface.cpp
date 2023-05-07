@@ -4,7 +4,7 @@
 
 namespace SnowEngine
 {
-	const VkSurface* VkSurface::sBoundSurface{ nullptr };
+	VkSurface* VkSurface::sBoundSurface{ nullptr };
 
 	VkSurface::VkSurface(std::shared_ptr<const Window> window)
 		: mWindow{std::move(window) }
@@ -36,36 +36,34 @@ namespace SnowEngine
 
 	u32 VkSurface::GetCurrentFrame() const { return mCurrentCpuFrame; }
 
-	vk::CommandBuffer VkSurface::GetCommandBuffer() const { return mFrames[mCurrentCpuFrame].CommandBuffer; }
+	vk::CommandBuffer VkSurface::GetCommandBuffer() const { return mFrames[mCurrentPresentFrame].CommandBuffer; }
 
 	void VkSurface::Begin()
 	{
 		sBoundSurface = this;
-
-		VkCore::Get()->Device().waitForFences(mFrames[mCurrentPresentFrame].InFlight, true, std::numeric_limits<u64>::max());
+		
+		vk::Result result = VkCore::Get()->Device().waitForFences(mFrames[mCurrentPresentFrame].InFlight, true, std::numeric_limits<u64>::max());
 
 		try
 		{
-			VkCore::Get()->Device().acquireNextImageKHR(mSwapchain, std::numeric_limits<u64>::max(), mFrames[mCurrentPresentFrame].ImageAvailable, nullptr, &mCurrentCpuFrame);
+			result = VkCore::Get()->Device().acquireNextImageKHR(mSwapchain, std::numeric_limits<u64>::max(), mFrames[mCurrentPresentFrame].ImageAvailable, nullptr, &mCurrentCpuFrame);
 		}
 		catch (const vk::OutOfDateKHRError&)
 		{
 			
 		}
 
+		FlushPostSubmitQueue();
+
 		VkCore::Get()->Device().resetFences(mFrames[mCurrentPresentFrame].InFlight);
 
-		mFrames[mCurrentCpuFrame].CommandBuffer.reset();
-
-		mFrames[mCurrentCpuFrame].CommandBuffer.begin({ vk::CommandBufferUsageFlagBits::eOneTimeSubmit });
-
-		mFrames[mCurrentCpuFrame].CommandBuffer.setViewport(0, { { 0.0f, 0.0f, static_cast<float>(mExtent.width), static_cast<float>(mExtent.height), 0.0f, 1.0f } });
-		mFrames[mCurrentCpuFrame].CommandBuffer.setScissor(0, vk::Rect2D{ {{0, 0}, mExtent.width, mExtent.height } });
+		mFrames[mCurrentPresentFrame].CommandBuffer.reset();
+		mFrames[mCurrentPresentFrame].CommandBuffer.begin({ vk::CommandBufferUsageFlagBits::eOneTimeSubmit });
 	}
 
 	void VkSurface::End()
 	{
-		mFrames[mCurrentCpuFrame].CommandBuffer.end();
+		mFrames[mCurrentPresentFrame].CommandBuffer.end();
 
 		const vk::Semaphore waitSemaphores[] = { mFrames[mCurrentPresentFrame].ImageAvailable };
 		const vk::PipelineStageFlags waitStages[] = { vk::PipelineStageFlagBits::eColorAttachmentOutput };
@@ -79,23 +77,28 @@ namespace SnowEngine
 		submitInfo.signalSemaphoreCount = 1;
 		submitInfo.pSignalSemaphores = &mFrames[mCurrentPresentFrame].RenderFinished;
 
-		VkCore::Get()->Queues()[mCurrentPresentFrame].Queue.submit(submitInfo, mFrames[mCurrentPresentFrame].InFlight);//TODO: queue index
+		VkCore::Get()->Queues()[0].Queue.submit(submitInfo, mFrames[mCurrentPresentFrame].InFlight);//TODO: queue index
 
 		vk::PresentInfoKHR presentInfo;
 		presentInfo.waitSemaphoreCount = 1;
 		presentInfo.pWaitSemaphores = &mFrames[mCurrentPresentFrame].RenderFinished;
 		presentInfo.swapchainCount = 1;
 		presentInfo.pSwapchains = &mSwapchain;
-		presentInfo.pImageIndices = &mCurrentPresentFrame;
+		presentInfo.pImageIndices = &mCurrentCpuFrame;
 
-		VkCore::Get()->Queues()[mCurrentPresentFrame].Queue.presentKHR(presentInfo);
+		VkCore::Get()->Queues()[1].Queue.presentKHR(presentInfo);
 
-		mCurrentPresentFrame = (mCurrentPresentFrame + 1) % mFrames.size();
+		mCurrentPresentFrame = (mCurrentPresentFrame + 1) % mFrames.size() - 1;
 
 		sBoundSurface = nullptr;
 	}
 
-	const VkSurface* VkSurface::BoundSurface() { return sBoundSurface; }
+	void VkSurface::SubmitPostFrameQueue(const std::function<void(u32 frameIndex)>& func)
+	{
+		mPostSubmitQueue.emplace_back(0, func);
+	}
+
+	VkSurface* VkSurface::BoundSurface() { return sBoundSurface; }
 
 	void VkSurface::CreateSurface()
 	{
@@ -227,6 +230,19 @@ namespace SnowEngine
 			inFlight = VkCore::Get()->Device().createFence(fenceCreateInfo);
 
 			i++;
+		}
+	}
+
+	void VkSurface::FlushPostSubmitQueue()
+	{
+		for (u32 i{ 0 }; i < mPostSubmitQueue.size(); i++) {
+			auto& [count, func] = mPostSubmitQueue[i];
+			func(mCurrentCpuFrame);
+			count++;
+			if (count == mImageCount) {
+				mPostSubmitQueue.erase(mPostSubmitQueue.begin() + i);
+				i--;
+			}
 		}
 	}
 }

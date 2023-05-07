@@ -11,7 +11,7 @@
 #pragma comment(lib, "spirv-cross-cored.lib")
 #pragma comment(lib, "spirv-cross-glsld.lib")
 #else
-#pragma commend(lib, "shaderc_combined.lib")
+#pragma comment(lib, "shaderc_combined.lib")
 #pragma comment(lib, "spirv-cross-core.lib")
 #pragma comment(lib, "spirv-cross-glsl.lib")
 #endif

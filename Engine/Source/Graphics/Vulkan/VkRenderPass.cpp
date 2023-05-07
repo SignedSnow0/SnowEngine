@@ -12,7 +12,9 @@ namespace SnowEngine
 		CreateDependencies(vk::PipelineStageFlagBits::eColorAttachmentOutput, vk::AccessFlagBits::eColorAttachmentWrite);
 		CreateRenderPass();
 
-		CreateFramebuffers(mSurface->GetViews());
+		mFramebuffers.resize(mSurface->GetViews().size());
+		for (u32 i = 0; i < mSurface->GetViews().size(); i++)
+			CreateFramebuffer(mSurface->GetViews()[i], i);
 	}
 
 	VkRenderPass::VkRenderPass(const u32 frameCount, const u32 width, const u32 height)
@@ -22,14 +24,14 @@ namespace SnowEngine
 		CreateSubpasses();
 		CreateDependencies(vk::PipelineStageFlagBits::eFragmentShader, vk::AccessFlagBits::eShaderRead);
 		CreateRenderPass();
-		CreateImages(frameCount);
 
-		std::vector<vk::ImageView> views{};
-		views.reserve(mImages.size());
-		for (const auto& image : mImages)
-			views.emplace_back(image->GetView());
-
-		CreateFramebuffers(views);
+		mImages.resize(frameCount);
+		mFramebuffers.resize(frameCount);
+		for (u32 i = 0; i < frameCount; i++)
+		{
+			CreateImage(i);
+			CreateFramebuffer(mImages[i]->GetView(), i);
+		}
 	}
 
 	vk::RenderPass VkRenderPass::RenderPass() const { return mRenderPass; }
@@ -45,24 +47,21 @@ namespace SnowEngine
 		mWidth = width;
 		mHeight = height;
 
-		mFramebuffers.clear();
-
-		if (mSurface)
+		VkSurface::BoundSurface()->SubmitPostFrameQueue([this](const u32 frameIndex)
 		{
-			CreateFramebuffers(mSurface->GetViews());
-			return;
-		}
+			VkCore::Get()->Device().destroyFramebuffer(mFramebuffers[frameIndex]);
+		
+			if (mSurface)
+			{
+				CreateFramebuffer(mSurface->GetViews()[frameIndex], frameIndex);
+				return;
+			}
 
-		const u32 frameCount = static_cast<u32>(mImages.size());
-		mImages.clear();
+			mImages[frameIndex].reset();
 
-		CreateImages(frameCount);
-		std::vector<vk::ImageView> views{};
-		views.reserve(mImages.size());
-		for (const auto& image : mImages)
-			views.emplace_back(image->GetView());
-
-		CreateFramebuffers(views);
+			CreateImage(frameIndex);
+			CreateFramebuffer(mImages[frameIndex]->GetView(), frameIndex);
+		});
 	}
 
 	void VkRenderPass::Begin() const
@@ -73,10 +72,13 @@ namespace SnowEngine
 		beginInfo.renderPass = mRenderPass;
 		beginInfo.framebuffer = mFramebuffers[VkSurface::BoundSurface()->GetCurrentFrame()];
 		beginInfo.renderArea.offset = vk::Offset2D{ 0, 0 };
-		beginInfo.renderArea.extent = vk::Extent2D{ VkSurface::BoundSurface()->GetWidth(), VkSurface::BoundSurface()->GetHeight() };
+		beginInfo.renderArea.extent = vk::Extent2D{ mWidth, mHeight };
 		beginInfo.clearValueCount = 1;
 		beginInfo.pClearValues = &clearColor;
-		
+
+		VkSurface::BoundSurface()->GetCommandBuffer().setViewport(0, { { 0.0f, 0.0f, static_cast<f32>(mWidth), static_cast<f32>(mHeight), 0.0f, 1.0f } });
+		VkSurface::BoundSurface()->GetCommandBuffer().setScissor(0, vk::Rect2D{ {{0, 0}, mWidth, mHeight } });
+
 		VkSurface::BoundSurface()->GetCommandBuffer().beginRenderPass(beginInfo, vk::SubpassContents::eInline);
 	}
 
@@ -133,27 +135,21 @@ namespace SnowEngine
 		mRenderPass = VkCore::Get()->Device().createRenderPass(createInfo);
 	}
 
-	void VkRenderPass::CreateFramebuffers(const std::vector<vk::ImageView>& views)
+	void VkRenderPass::CreateFramebuffer(const vk::ImageView view, const u32 currentFrame)
 	{
-		mFramebuffers.reserve(views.size());
+		vk::FramebufferCreateInfo createInfo{};
+		createInfo.renderPass = mRenderPass;
+		createInfo.attachmentCount = 1;
+		createInfo.pAttachments = &view;
+		createInfo.width = mWidth;
+		createInfo.height = mHeight;
+		createInfo.layers = 1;
 
-		for (const auto& view : views)
-		{
-			vk::FramebufferCreateInfo createInfo{};
-			createInfo.renderPass = mRenderPass;
-			createInfo.attachmentCount = 1;
-			createInfo.pAttachments = &view;
-			createInfo.width = mWidth;
-			createInfo.height = mHeight;
-			createInfo.layers = 1;
-
-			mFramebuffers.emplace_back(VkCore::Get()->Device().createFramebuffer(createInfo));
-		}
+		mFramebuffers[currentFrame] = VkCore::Get()->Device().createFramebuffer(createInfo);
 	}
 
-	void VkRenderPass::CreateImages(const u32 frameCount)
+	void VkRenderPass::CreateImage(const u32 currentFrame)
 	{
-		for (u32 i = 0; i < frameCount; i++)
-			mImages.emplace_back(std::make_unique<VkImage>(mWidth, mHeight, vk::Format::eR8G8B8A8Srgb, vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eColorAttachment, vk::ImageLayout::eShaderReadOnlyOptimal));
+		mImages[currentFrame] = std::make_unique<VkImage>(mWidth, mHeight, vk::Format::eB8G8R8A8Srgb, vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eColorAttachment, vk::ImageLayout::eShaderReadOnlyOptimal);
 	}
 }
