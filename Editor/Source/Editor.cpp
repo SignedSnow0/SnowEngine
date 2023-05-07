@@ -11,16 +11,16 @@ int main()
 {
 	SnowEngine::GraphicsCore::Init();
 	{
-		const auto window = SnowEngine::Window::Create("SnowEngine", 2560, 1440);
+		const auto window = SnowEngine::Window::Create("SnowEngine", 1920, 1080);
 		const auto surface = SnowEngine::Surface::Create(window);
-		const auto renderPass = SnowEngine::RenderPass::Create(surface);
+		const auto renderPass = SnowEngine::RenderPass::Create(2, 1920, 1080);
 		const auto shader = SnowEngine::Shader::Create(
-			{
-				{ "C:/Dev/SnowEngine/Engine/Resources/Shaders/default.vert", SnowEngine::ShaderType::Vertex },
-				{ "C:/Dev/SnowEngine/Engine/Resources/Shaders/default.frag", SnowEngine::ShaderType::Fragment },
-			});
+		{
+			{ "D:/Dev/SnowEngine/Engine/Resources/Shaders/default.vert", SnowEngine::ShaderType::Vertex },
+			{ "D:/Dev/SnowEngine/Engine/Resources/Shaders/default.frag", SnowEngine::ShaderType::Fragment },
+		});
 
-		const auto image = SnowEngine::Image::Create("C:/Dev/SnowEngine/Engine/Resources/Images/sus.png");
+		const auto image = SnowEngine::Image::Create("D:/Dev/SnowEngine/Engine/Resources/Images/sus.png");
 
 		const auto pipeline = SnowEngine::Pipeline::Create(shader, renderPass, 2560, 1440);
 
@@ -57,19 +57,22 @@ int main()
 
 		modelDescriptorSet->SetImage("albedo", image.get());//TODO: descriptor set should take image when using it
 
+		const auto gui = SnowEngine::Gui::Create(surface, renderPass);
+
 		static auto startTime = std::chrono::high_resolution_clock::now();
 		while (!window->Closing())
 		{
+			surface->Begin();
+
 			auto currentTime = std::chrono::high_resolution_clock::now();
-			const float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+			const f32 time = std::chrono::duration<f32, std::chrono::seconds::period>(currentTime - startTime).count();
 
 			camera.View = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-			camera.Projection = glm::perspective(glm::radians(45.0f), 2560 / static_cast<float>(1440), 0.1f, 10.0f);
+			camera.Projection = glm::perspective(glm::radians(45.0f), renderPass->Width() / static_cast<f32>(renderPass->Height()), 0.1f, 10.0f);
 			camera.Projection[1][1] *= -1;
 
 			transform.Model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 
-			surface->Begin();
 			renderPass->Begin();
 
 			cameraDescriptorSet->SetUniform("Camera", &camera, surface->GetCurrentFrame());
@@ -84,6 +87,10 @@ int main()
 			indexBuffer->Draw();
 
 			renderPass->End();
+
+			gui->Begin();
+			gui->End();
+
 			surface->End();
 
 			SnowEngine::Window::Update();

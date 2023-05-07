@@ -8,4 +8,9 @@ namespace SnowEngine
 	{
 		return std::make_shared<VkRenderPass>(std::static_pointer_cast<const VkSurface>(surface));
 	}
+
+	std::shared_ptr<RenderPass> RenderPass::Create(u32 frameCount, u32 width, u32 height)
+	{
+		return std::make_shared<VkRenderPass>(frameCount, width, height);
+	}
 }

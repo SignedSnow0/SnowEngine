@@ -20,26 +20,24 @@ namespace SnowEngine
 		CreateView();
 	}
 
+	VkImage::VkImage(const u32 width, const u32 height, const vk::Format format, const vk::ImageUsageFlags usage, const vk::ImageLayout layout)
+		: mFormat{ format }
+	{
+		CreateImage(width, height, usage, layout);
+		CreateView();
+	}
+
 	VkImage::~VkImage()
 	{
 		vmaDestroyImage(VkCore::Get()->Allocator(), mImage, mAllocation);
 	}
 
-	vk::ImageLayout VkImage::GetLayout() const { return  mLayout; }
+	vk::ImageLayout VkImage::GetLayout() const { return mLayout; }
 
 	vk::ImageView VkImage::GetView() const { return mView; }
 
-	void VkImage::CreateImage(const std::filesystem::path& source)
+	void VkImage::CreateImage(const u32 width, const u32 height, const vk::ImageUsageFlags usage, const vk::ImageLayout layout)
 	{
-		u32 width, height;
-		auto* pixels{ LoadImage(source, &width, &height) };
-		const VkBuffer staging{ width * height * 4, vk::BufferUsageFlagBits::eTransferSrc, VMA_MEMORY_USAGE_CPU_TO_GPU };
-		staging.InsertData(pixels);
-		stbi_image_free(pixels);
-
-		mFormat = vk::Format::eR8G8B8A8Srgb;
-		mLayout = vk::ImageLayout::eUndefined;
-
 		vk::ImageCreateInfo createInfo{};
 		createInfo.imageType = vk::ImageType::e2D;
 		createInfo.extent.width = width;
@@ -50,18 +48,30 @@ namespace SnowEngine
 		createInfo.format = mFormat;
 		createInfo.tiling = vk::ImageTiling::eOptimal;
 		createInfo.initialLayout = mLayout;
-		createInfo.usage = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled;
+		createInfo.usage = usage;
 		createInfo.sharingMode = vk::SharingMode::eExclusive;
 		createInfo.samples = vk::SampleCountFlagBits::e1;
 
 		VmaAllocationCreateInfo allocInfo{};
 		allocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
 
-		vmaCreateImage(VkCore::Get()->Allocator(), reinterpret_cast<VkImageCreateInfo*>(&createInfo), &allocInfo, reinterpret_cast<::VkImage*>(&mImage), &mAllocation, nullptr);
+		auto res = vmaCreateImage(VkCore::Get()->Allocator(), reinterpret_cast<VkImageCreateInfo*>(&createInfo), &allocInfo, reinterpret_cast<::VkImage*>(&mImage), &mAllocation, nullptr);
 
-		ChangeLayout(vk::ImageLayout::eTransferDstOptimal);
+		ChangeLayout(layout);
+	}
 
-		VkCore::Get()->SubmitInstantCommand([&](vk::CommandBuffer cmd)
+	void VkImage::CreateImage(const std::filesystem::path& source)
+	{
+		u32 width, height;
+		auto* pixels{ LoadImage(source, &width, &height) };
+		const VkBuffer staging{ width * height * 4, vk::BufferUsageFlagBits::eTransferSrc, VMA_MEMORY_USAGE_CPU_TO_GPU };
+		staging.InsertData(pixels);
+		stbi_image_free(pixels);
+
+		mFormat = vk::Format::eR8G8B8A8Srgb;
+		CreateImage(width, height, vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled, vk::ImageLayout::eTransferDstOptimal);
+
+		VkCore::Get()->SubmitInstantCommand([&](const vk::CommandBuffer cmd)
 		{
 			vk::BufferImageCopy region{};
 			region.bufferOffset = 0;
@@ -95,7 +105,7 @@ namespace SnowEngine
 		mView = VkCore::Get()->Device().createImageView(createInfo);
 	}
 
-	void VkImage::ChangeLayout(vk::ImageLayout newLayout)
+	void VkImage::ChangeLayout(const vk::ImageLayout newLayout)
 	{
 		vk::ImageMemoryBarrier barrier{};
 		barrier.oldLayout = mLayout;

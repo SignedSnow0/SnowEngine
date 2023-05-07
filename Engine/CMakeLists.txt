@@ -10,6 +10,8 @@
 						  "Source/Graphics/Rhi/Core.h"
 						  "Source/Graphics/Rhi/DescriptorSet.cpp"
 						  "Source/Graphics/Rhi/DescriptorSet.h" 
+						  "Source/Graphics/Rhi/Gui.cpp"
+						  "Source/Graphics/Rhi/Gui.h"
 						  "Source/Graphics/Rhi/Image.cpp"
 						  "Source/Graphics/Rhi/Image.h" 
 						  "Source/Graphics/Rhi/Pipeline.cpp"
@@ -27,6 +29,8 @@
 						  "Source/Graphics/Vulkan/VkCore.h"
 						  "Source/Graphics/Vulkan/VkDescriptorSet.cpp"
 						  "Source/Graphics/Vulkan/VkDescriptorSet.h"
+						  "Source/Graphics/Vulkan/VkGui.cpp"
+						  "Source/Graphics/Vulkan/VkGui.h" 
 						  "Source/Graphics/Vulkan/VkImage.cpp"
 						  "Source/Graphics/Vulkan/VkImage.h" 
 						  "Source/Graphics/Vulkan/VkPipeline.cpp"
@@ -48,18 +52,21 @@ set(GLFW_BUILD_DOCS ON CACHE BOOL "" FORCE)
 set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 
-add_subdirectory("External/glfw/"
-				 "External/glm/")
+add_subdirectory("External/glfw/")
+add_subdirectory("External/glm/")
+add_subdirectory("External/imgui")
 
 find_package(Vulkan REQUIRED FATAL_ERROR)
 
 target_link_directories(Engine PUBLIC "$ENV{VULKAN_SDK}/Lib/")
 
 target_link_libraries(Engine glfw
-							 vulkan-1.lib)
+							 vulkan-1.lib
+							 imgui)
 
 target_include_directories(Engine PUBLIC "External/glfw/include/" 
 								  PUBLIC "External/glm/"
 								  PUBLIC "External/stb/"
+								  PUBLIC "External/imgui/"
 								  PUBLIC "$ENV{VULKAN_SDK}/Include/"
 								  PRIVATE "Source/")

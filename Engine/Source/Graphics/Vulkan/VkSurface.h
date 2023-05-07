@@ -14,6 +14,7 @@ namespace SnowEngine
 		std::vector<vk::ImageView> GetViews() const;
 		u32 GetWidth() const;
 		u32 GetHeight() const;
+		std::shared_ptr<const Window> GetWindow() const;
 		vk::CommandBuffer GetCommandBuffer() const;
 		u32 GetCurrentFrame() const override;
 

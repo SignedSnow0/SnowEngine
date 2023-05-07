@@ -32,6 +32,8 @@ namespace SnowEngine
 
 	u32 VkSurface::GetHeight() const { return mExtent.height; }
 
+	std::shared_ptr<const Window> VkSurface::GetWindow() const { return mWindow; }
+
 	u32 VkSurface::GetCurrentFrame() const { return mCurrentCpuFrame; }
 
 	vk::CommandBuffer VkSurface::GetCommandBuffer() const { return mFrames[mCurrentCpuFrame].CommandBuffer; }
