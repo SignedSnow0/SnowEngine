@@ -25,15 +25,15 @@ namespace SnowEngine
 		ImGui::DestroyContext();
 	}
 
-	void VkGui::Begin() const
+	void VkGui::Begin()
 	{
-		ImGui_ImplVulkan_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
+		ImGui_ImplVulkan_NewFrame();
+
 		ImGui::NewFrame();
 
-		ImGui::ShowDemoWindow();//TODO: remove
-
 		ImGui::DockSpaceOverViewport();
+		ImGui::ShowDemoWindow();//TODO: remove
 
 		mRenderPass.Begin();
 	}
@@ -115,6 +115,9 @@ namespace SnowEngine
 		ImGui::CreateContext();
 		ImGuiIO& io{ ImGui::GetIO() };
 		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+
+		const auto font = io.Fonts->AddFontFromFileTTF("C:/Dev/SnowEngine/Engine/Resources/Fonts/Lilex/LilexNerdFont-Regular.ttf", 20);
+		io.FontDefault = font;
 
 		ImGui_ImplGlfw_InitForVulkan(mSurface->GetWindow()->Handle(), true);
 

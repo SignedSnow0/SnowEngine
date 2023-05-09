@@ -14,7 +14,7 @@ namespace SnowEngine
 		VkGui(std::shared_ptr<const VkSurface> surface, std::shared_ptr<VkRenderPass> scene);
 		~VkGui() override;
 
-		void Begin() const override;
+		void Begin() override;
 		void End() override;
 
 	private:

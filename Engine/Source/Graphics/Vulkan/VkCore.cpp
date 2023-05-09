@@ -210,7 +210,7 @@ namespace SnowEngine
 		VkQueue graphicsQueue{};
 		VkQueue presentQueue{};
 
-		const auto window = Window::Create("Query window", 100, 100, false, false);
+		const auto window = Window::Create("Query window", 100, 100, false, false, false);
 		VkSurfaceKHR surface;
 		glfwCreateWindowSurface(mInstance, window->Handle(), nullptr, &surface);
 

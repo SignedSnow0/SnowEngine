@@ -6,21 +6,22 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include <chrono>
+#include <imgui.h>
 
 int main()
 {
 	SnowEngine::GraphicsCore::Init();
 	{
-		const auto window = SnowEngine::Window::Create("SnowEngine", 1920, 1080);
+		const auto window = SnowEngine::Window::Create("SnowEngine", 2560, 1440, true, true, true);
 		const auto surface = SnowEngine::Surface::Create(window);
 		const auto renderPass = SnowEngine::RenderPass::Create(2, 1920, 1080);
 		const auto shader = SnowEngine::Shader::Create(
 		{
-			{ "D:/Dev/SnowEngine/Engine/Resources/Shaders/default.vert", SnowEngine::ShaderType::Vertex },
-			{ "D:/Dev/SnowEngine/Engine/Resources/Shaders/default.frag", SnowEngine::ShaderType::Fragment },
+			{ "C:/Dev/SnowEngine/Engine/Resources/Shaders/default.vert", SnowEngine::ShaderType::Vertex },
+			{ "C:/Dev/SnowEngine/Engine/Resources/Shaders/default.frag", SnowEngine::ShaderType::Fragment },
 		});
 
-		const auto image = SnowEngine::Image::Create("D:/Dev/SnowEngine/Engine/Resources/Images/sus.png");
+		const auto image = SnowEngine::Image::Create("C:/Dev/SnowEngine/Engine/Resources/Images/sus.png");
 
 		const auto pipeline = SnowEngine::Pipeline::Create(shader, renderPass, 2560, 1440);
 
@@ -89,6 +90,18 @@ int main()
 			renderPass->End();
 
 			gui->Begin();
+
+			if (ImGui::Begin("Entities"))
+			{
+				
+			}
+			ImGui::End();
+			if (ImGui::Begin("Components"))
+			{
+
+			}
+			ImGui::End();
+
 			gui->End();
 
 			surface->End();

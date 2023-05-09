@@ -19,7 +19,7 @@ namespace SnowEngine
 		u32 Height() const override;
 
 		void Resize(u32 width, u32 height);
-		void Begin() const override;
+		void Begin() override;
 		void End() const override;
 
 	private:

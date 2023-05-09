@@ -14,6 +14,7 @@ namespace SnowEngine
 		CreateSwapchain();
 		CreateCommandPool();
 		CreateFrameData();
+		CreateSyncObjects();
 	}
 
 	vk::Format VkSurface::GetFormat() const { return mSurfaceFormat.format; }
@@ -50,7 +51,7 @@ namespace SnowEngine
 		}
 		catch (const vk::OutOfDateKHRError&)
 		{
-			
+			Resize();
 		}
 
 		FlushPostSubmitQueue();
@@ -86,7 +87,12 @@ namespace SnowEngine
 		presentInfo.pSwapchains = &mSwapchain;
 		presentInfo.pImageIndices = &mCurrentCpuFrame;
 
-		VkCore::Get()->Queues()[1].Queue.presentKHR(presentInfo);
+		const vk::Result result = VkCore::Get()->Queues()[1].Queue.presentKHR(presentInfo);
+		if (result == vk::Result::eErrorOutOfDateKHR || result == vk::Result::eSuboptimalKHR)
+		{
+			Resize();
+		}
+
 
 		mCurrentPresentFrame = (mCurrentPresentFrame + 1) % mFrames.size() - 1;
 
@@ -139,6 +145,12 @@ namespace SnowEngine
 			}
 		}
 
+		mImageCount = capabilities.minImageCount;
+	}
+
+	void VkSurface::CreateSwapchain()
+	{
+		const vk::SurfaceCapabilitiesKHR capabilities{ VkCore::Get()->PhysicalDevice().getSurfaceCapabilitiesKHR(mSurface)};
 		if (capabilities.currentExtent.width != std::numeric_limits<u32>::max())
 		{
 			mExtent = capabilities.currentExtent;
@@ -150,11 +162,6 @@ namespace SnowEngine
 			mExtent.height = std::max(capabilities.minImageExtent.height, std::min(capabilities.maxImageExtent.height, mExtent.height));
 		}
 
-		mImageCount = capabilities.minImageCount;
-	}
-
-	void VkSurface::CreateSwapchain()
-	{
 		const std::vector<u32> qeues = { VkCore::Get()->Queues()[0].Family, VkCore::Get()->Queues()[1].Family };
 		const b8 sharedQueue{ qeues[0] == qeues[1] };
 
@@ -205,11 +212,6 @@ namespace SnowEngine
 		viewCreateInfo.subresourceRange.baseArrayLayer = 0;
 		viewCreateInfo.subresourceRange.layerCount = 1;
 
-		vk::SemaphoreCreateInfo semaphoreCreateInfo{};
-
-		vk::FenceCreateInfo fenceCreateInfo{};
-		fenceCreateInfo.flags = vk::FenceCreateFlagBits::eSignaled;
-
 		u32 i{ 0 };
 		for (auto& [image, imageView, commandBuffer, imageAvailable, renderFinished, inFlight] : mFrames)
 		{
@@ -218,6 +220,20 @@ namespace SnowEngine
 			viewCreateInfo.image = image;
 			imageView = VkCore::Get()->Device().createImageView(viewCreateInfo);
 
+			i++;
+		}
+	}
+
+	void VkSurface::CreateSyncObjects()
+	{
+		vk::SemaphoreCreateInfo semaphoreCreateInfo{};
+
+		vk::FenceCreateInfo fenceCreateInfo{};
+		fenceCreateInfo.flags = vk::FenceCreateFlagBits::eSignaled;
+
+		u32 i{ 0 };
+		for (auto& [image, imageView, commandBuffer, imageAvailable, renderFinished, inFlight] : mFrames)
+		{
 			vk::CommandBufferAllocateInfo commandBufferAllocateInfo{};
 			commandBufferAllocateInfo.commandPool = mCommandPool;
 			commandBufferAllocateInfo.level = vk::CommandBufferLevel::ePrimary;
@@ -244,5 +260,15 @@ namespace SnowEngine
 				i--;
 			}
 		}
+	}
+
+	void VkSurface::Resize()
+	{
+		VkCore::Get()->Device().waitIdle();
+
+		VkCore::Get()->Device().destroySwapchainKHR(mSwapchain);
+
+		CreateSwapchain();
+		CreateFrameData();
 	}
 }

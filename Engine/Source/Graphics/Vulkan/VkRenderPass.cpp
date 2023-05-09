@@ -64,8 +64,20 @@ namespace SnowEngine
 		});
 	}
 
-	void VkRenderPass::Begin() const
+	void VkRenderPass::Begin()
 	{
+		if (mSurface && (mWidth != mSurface->GetWidth() || mHeight != mSurface->GetHeight()))
+		{
+			mWidth = mSurface->GetWidth();
+			mHeight = mSurface->GetHeight();
+
+			for (u32 i{ 0 }; i < mSurface->GetViews().size(); i++)
+			{
+				VkCore::Get()->Device().destroyFramebuffer(mFramebuffers[i]);
+				CreateFramebuffer(mSurface->GetViews()[i], i);
+			}
+		}
+
 		const vk::ClearValue clearColor{ vk::ClearColorValue{ std::array<float, 4>{0.0f, 0.0f, 0.0f, 1.0f} } };
 
 		vk::RenderPassBeginInfo beginInfo{};

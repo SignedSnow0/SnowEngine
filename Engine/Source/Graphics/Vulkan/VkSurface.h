@@ -31,7 +31,9 @@ namespace SnowEngine
 		void CreateSwapchain();
 		void CreateCommandPool();
 		void CreateFrameData();
+		void CreateSyncObjects();
 		void FlushPostSubmitQueue();
+		void Resize();
 
 		struct FrameData
 		{

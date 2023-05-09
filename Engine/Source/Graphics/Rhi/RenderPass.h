@@ -15,7 +15,7 @@ namespace SnowEngine
 		virtual u32 Width() const = 0;
 		virtual u32 Height() const = 0;
 
-		virtual void Begin() const = 0;
+		virtual void Begin() = 0;
 		virtual void End() const = 0;
 	};
 }
