@@ -15,8 +15,8 @@ namespace SnowEngine
 		VkImage(u32 width, u32 height, vk::Format format, vk::ImageUsageFlags usage, vk::ImageLayout layout);
 		~VkImage() override;
 
-		vk::ImageLayout GetLayout() const;
-		vk::ImageView GetView() const;
+		vk::ImageLayout Layout() const;
+		vk::ImageView View() const;
 
 	private:
 		void CreateImage(u32 width, u32 height, vk::ImageUsageFlags usage, vk::ImageLayout layout);

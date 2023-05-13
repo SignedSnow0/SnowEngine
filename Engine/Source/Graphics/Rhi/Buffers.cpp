@@ -13,4 +13,9 @@ namespace SnowEngine
 	{
 		return std::make_shared<VkIndexBuffer>(indices, indexCount);
 	}
+
+	std::shared_ptr<StorageBuffer> StorageBuffer::Create(const u32 size)
+	{
+		return std::make_shared<VkStorageBuffer>(size);
+	}
 }

@@ -6,12 +6,12 @@ namespace SnowEngine
 
 	std::shared_ptr<Window> Window::Create(const char* title, const i32 width, const i32 height)
 	{
-		return Create(title, width, height, true, true);
+		return Create(title, width, height, true, true, false);
 	}
 
-	std::shared_ptr<Window> Window::Create(const char* title, const i32 width, const i32 height, const b8 resizable, const b8 visible)
+	std::shared_ptr<Window> Window::Create(const char* title, const i32 width, const i32 height, const b8 resizable, const b8 visible, const b8 maximized)
 	{
-		return std::make_shared<Window>(title, width, height, resizable, visible);
+		return std::make_shared<Window>(title, width, height, resizable, visible, maximized);
 	}
 
 	Window::~Window()
@@ -39,7 +39,7 @@ namespace SnowEngine
 
 	void Window::Update() { glfwPollEvents(); }
 
-	Window::Window(const char* title, const i32 width, const i32 height, const b8 resizable, const b8 visible)
+	Window::Window(const char* title, const i32 width, const i32 height, const b8 resizable, const b8 visible, const b8 maximized)
 	{
 		if (!sGLFWInitialized && !glfwInit())
 			return;//TODO: error
@@ -49,5 +49,8 @@ namespace SnowEngine
 		glfwWindowHint(GLFW_VISIBLE, visible ? GLFW_TRUE : GLFW_FALSE);
 
 		mWindow = glfwCreateWindow(width, height, title, nullptr, nullptr);
+
+		if (maximized)
+			glfwMaximizeWindow(mWindow);
 	}
 }

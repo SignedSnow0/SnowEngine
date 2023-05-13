@@ -8,4 +8,9 @@ namespace SnowEngine
 	{
 		return std::make_shared<VkPipeline>(std::static_pointer_cast<const VkShader>(shader), std::static_pointer_cast<const VkRenderPass>(renderPass), width, height);
 	}
+
+	std::shared_ptr<ComputePipeline> ComputePipeline::Create(const std::shared_ptr<const Shader>& shader)
+	{
+		return std::make_shared<VkComputePipeline>(std::static_pointer_cast<const VkShader>(shader));
+	}
 }

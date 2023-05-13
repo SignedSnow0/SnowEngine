@@ -1,4 +1,5 @@
 #pragma once
+#include "Buffers.h"
 #include "Image.h"
 #include "Shader.h"
 #include "Core/Types.h"
@@ -13,5 +14,6 @@ namespace SnowEngine
 
 		virtual void SetUniform(const std::string& name, const void* data, u32 currentFrame) const = 0;
 		virtual void SetImage(const std::string& name, const Image* image) const = 0;
+		virtual void SetStorageBuffer(const std::string& name, const std::shared_ptr<StorageBuffer>& buffer) = 0;
 	};
 }

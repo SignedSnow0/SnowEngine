@@ -3,6 +3,7 @@
 #include "VkCore.h"
 #include "VkBuffers.h"
 #include "VkDescriptorSet.h"
+#include "VkCommandBuffer.h"
 
 namespace SnowEngine
 {
@@ -13,22 +14,26 @@ namespace SnowEngine
 		CreateFixedFunctions(width, height);
 	}
 
-	void VkPipeline::Bind() const
+	void VkPipeline::Bind(const std::shared_ptr<CommandBuffer>& cmd) const
 	{
-		VkSurface::BoundSurface()->GetCommandBuffer().bindPipeline(vk::PipelineBindPoint::eGraphics, mPipeline);
+		const auto& vkCmd = std::static_pointer_cast<VkCommandBuffer>(cmd);
+
+		vkCmd->CurrentBuffer().bindPipeline(vk::PipelineBindPoint::eGraphics, mPipeline);
 	}
 
-	void VkPipeline::BindDescriptorSet(const DescriptorSet* set, const u32 currentFrame) const
+	void VkPipeline::BindDescriptorSet(const DescriptorSet* set, const u32 currentFrame, const std::shared_ptr<CommandBuffer>& cmd) const
 	{
+		const auto& vkCmd = std::static_pointer_cast<VkCommandBuffer>(cmd);
+
 		const auto vkDescriptorSet{ reinterpret_cast<const VkDescriptorSet*>(set) };
-		VkSurface::BoundSurface()->GetCommandBuffer().bindDescriptorSets(vk::PipelineBindPoint::eGraphics, mLayout, vkDescriptorSet->GetSetIndex(), vkDescriptorSet->GetSets().at(currentFrame), nullptr);
+		vkCmd->CurrentBuffer().bindDescriptorSets(vk::PipelineBindPoint::eGraphics, mLayout, vkDescriptorSet->SetIndex(), vkDescriptorSet->Sets().at(currentFrame), nullptr);
 	}
 
 	void VkPipeline::CreateLayout()
 	{
 		std::vector<vk::DescriptorSetLayout> layouts{};
-		layouts.reserve(mShader->GetLayouts().size());
-		for (const auto& [set, layout] : mShader->GetLayouts())
+		layouts.reserve(mShader->Layouts().size());
+		for (const auto& [set, layout] : mShader->Layouts())
 			layouts.emplace_back(layout.CreateLayout());
 
 		vk::PipelineLayoutCreateInfo createInfo;
@@ -120,7 +125,7 @@ namespace SnowEngine
 		colorBlendInfo.blendConstants[2] = 0.0f;
 		colorBlendInfo.blendConstants[3] = 0.0f;
 
-		const auto shaderStages = mShader->GetShaderStageInfos();
+		const auto shaderStages = mShader->ShaderStageInfos();
 
 		vk::GraphicsPipelineCreateInfo createInfo;
 		createInfo.stageCount = static_cast<uint32_t>(shaderStages.size());
@@ -140,5 +145,53 @@ namespace SnowEngine
 		createInfo.basePipelineIndex = -1;
 
 		mPipeline = VkCore::Get()->Device().createGraphicsPipeline(nullptr, createInfo).value;
+	}
+
+	VkComputePipeline::VkComputePipeline(std::shared_ptr<const VkShader> shader)
+		: mShader{ std::move(shader) }
+	{
+		CreateLayout();
+		CreatePipeline();
+	}
+
+	void VkComputePipeline::Dispatch(const u32 x, const u32 y, const u32 z, const std::shared_ptr<CommandBuffer>& cmd) const
+	{
+		const auto& vkCmd = std::static_pointer_cast<VkCommandBuffer>(cmd);
+
+		vkCmd->CurrentBuffer().bindPipeline(vk::PipelineBindPoint::eCompute, mPipeline);
+		vkCmd->CurrentBuffer().dispatch(x, y, z);
+	}
+
+	void VkComputePipeline::BindDescriptorSet(const DescriptorSet* set, const u32 currentFrame, const std::shared_ptr<CommandBuffer>& cmd) const
+	{
+		const auto& vkCmd = std::static_pointer_cast<VkCommandBuffer>(cmd);
+
+		const auto vkDescriptorSet{ reinterpret_cast<const VkDescriptorSet*>(set) };
+		vkCmd->CurrentBuffer().bindDescriptorSets(vk::PipelineBindPoint::eCompute, mLayout, vkDescriptorSet->SetIndex(), vkDescriptorSet->Sets().at(currentFrame), nullptr);
+	}
+
+	void VkComputePipeline::CreateLayout()
+	{
+		std::vector<vk::DescriptorSetLayout> layouts{};
+		layouts.reserve(mShader->Layouts().size());
+		for (const auto& [set, layout] : mShader->Layouts())
+			layouts.emplace_back(layout.CreateLayout());
+
+		vk::PipelineLayoutCreateInfo createInfo;
+		createInfo.setLayoutCount = static_cast<u32>(layouts.size());
+		createInfo.pSetLayouts = layouts.data();
+		createInfo.pushConstantRangeCount = 0;
+		createInfo.pPushConstantRanges = nullptr;
+
+		mLayout = VkCore::Get()->Device().createPipelineLayout(createInfo);
+	}
+
+	void VkComputePipeline::CreatePipeline()
+	{
+		vk::ComputePipelineCreateInfo pipelineInfo{};
+		pipelineInfo.layout = mLayout;
+		pipelineInfo.stage = mShader->ShaderStageInfos().front();
+
+		mPipeline = VkCore::Get()->Device().createComputePipeline(nullptr, pipelineInfo).value;
 	}
 }

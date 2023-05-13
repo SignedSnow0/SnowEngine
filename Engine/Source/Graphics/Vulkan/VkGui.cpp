@@ -3,6 +3,7 @@
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_vulkan.h>
 #include "VkCore.h"
+#include "VkCommandBuffer.h"
 
 namespace SnowEngine
 {
@@ -25,34 +26,35 @@ namespace SnowEngine
 		ImGui::DestroyContext();
 	}
 
-	void VkGui::Begin() const
+	void VkGui::Begin(const std::shared_ptr<CommandBuffer>& cmd)
 	{
-		ImGui_ImplVulkan_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
-		ImGui::NewFrame();
+		ImGui_ImplVulkan_NewFrame();
 
-		ImGui::ShowDemoWindow();//TODO: remove
+		ImGui::NewFrame();
 
 		ImGui::DockSpaceOverViewport();
 
-		mRenderPass.Begin();
+		mRenderPass.Begin(cmd);
 	}
 
-	void VkGui::End()
+	void VkGui::End(const std::shared_ptr<CommandBuffer>& cmd)
 	{
+		const auto& vkCmd = std::static_pointer_cast<VkCommandBuffer>(cmd);
+
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, { 0.0f, 0.0f });
 		if (ImGui::Begin("Scene"))
 		{
-			if (mScene->Width() != ImGui::GetContentRegionAvail().x || mScene->Height() != ImGui::GetContentRegionAvail().y)
+			if (mScene->Width() != static_cast<u32>(ImGui::GetContentRegionAvail().x) || mScene->Height() != static_cast<u32>(ImGui::GetContentRegionAvail().y))
 			{
-				mScene->Resize(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y);
+				mScene->Resize(static_cast<u32>(ImGui::GetContentRegionAvail().x), static_cast<u32>(ImGui::GetContentRegionAvail().y));
 				VkSurface::BoundSurface()->SubmitPostFrameQueue([this](const u32 frameIndex)
 				{
 					CreateSceneImage(*mScene->Images()[frameIndex], frameIndex);
 				});
 			}
 			else
-			 ImGui::Image(mSceneImages[mSurface->GetCurrentFrame()], ImGui::GetContentRegionAvail());
+			 ImGui::Image(mSceneImages[mSurface->CurrentFrame()], ImGui::GetContentRegionAvail());
 		}
 		ImGui::PopStyleVar(1);
 
@@ -60,8 +62,8 @@ namespace SnowEngine
 
 		ImGui::Render();
 
-		ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), VkSurface::BoundSurface()->GetCommandBuffer());
-		mRenderPass.End();
+		ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), vkCmd->CurrentBuffer());
+		mRenderPass.End(cmd);
 	}
 
 	void VkGui::CreateDescriptorPool()
@@ -110,11 +112,14 @@ namespace SnowEngine
 		mSampler = VkCore::Get()->Device().createSampler(createInfo);
 	}
 
-	void VkGui::InitImGui()
+	void VkGui::InitImGui() const
 	{
 		ImGui::CreateContext();
 		ImGuiIO& io{ ImGui::GetIO() };
 		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+
+		const auto font = io.Fonts->AddFontFromFileTTF("D:/Dev/SnowEngine/Engine/Resources/Fonts/Lilex/LilexNerdFont-Regular.ttf", 15);
+		io.FontDefault = font;
 
 		ImGui_ImplGlfw_InitForVulkan(mSurface->GetWindow()->Handle(), true);
 
@@ -122,11 +127,11 @@ namespace SnowEngine
 		initInfo.Instance = VkCore::Get()->Instance();
 		initInfo.PhysicalDevice = VkCore::Get()->PhysicalDevice();
 		initInfo.Device = VkCore::Get()->Device();
-		initInfo.Queue = VkCore::Get()->Queues()[0].Queue;
-		initInfo.QueueFamily = VkCore::Get()->Queues()[0].Family;
+		initInfo.Queue = VkCore::Get()->Queues().Graphics.second;
+		initInfo.QueueFamily = VkCore::Get()->Queues().Graphics.first;
 		initInfo.DescriptorPool = mDescriptorPool;
-		initInfo.MinImageCount = 2;
-		initInfo.ImageCount = 2; //TODO: surface
+		initInfo.MinImageCount = mSurface->ImageCount();
+		initInfo.ImageCount = mSurface->ImageCount();
 		initInfo.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
 
 		ImGui_ImplVulkan_Init(&initInfo, mRenderPass.RenderPass());
@@ -141,6 +146,6 @@ namespace SnowEngine
 
 	void VkGui::CreateSceneImage(const VkImage& image, const u32 frameIndex)
 	{
-		mSceneImages[frameIndex] = ImGui_ImplVulkan_AddTexture(mSampler, image.GetView(), static_cast<VkImageLayout>(image.GetLayout()));
+		mSceneImages[frameIndex] = ImGui_ImplVulkan_AddTexture(mSampler, image.View(), static_cast<VkImageLayout>(image.Layout()));
 	}
 }

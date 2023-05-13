@@ -15,7 +15,7 @@ namespace SnowEngine
 		virtual u32 Width() const = 0;
 		virtual u32 Height() const = 0;
 
-		virtual void Begin() const = 0;
-		virtual void End() const = 0;
+		virtual void Begin(const std::shared_ptr<CommandBuffer>& cmd) = 0;
+		virtual void End(const std::shared_ptr<CommandBuffer>& cmd) const = 0;
 	};
 }

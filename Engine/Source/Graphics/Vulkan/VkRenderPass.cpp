@@ -1,20 +1,21 @@
 #include "VkRenderPass.h"
 
 #include "VkCore.h"
+#include "VkCommandBuffer.h"
 
 namespace SnowEngine
 {
 	VkRenderPass::VkRenderPass(std::shared_ptr<const VkSurface> surface)
-		: mSurface{ std::move(surface) }, mWidth{ mSurface->GetWidth() }, mHeight{ mSurface->GetHeight() }
+		: mSurface{ std::move(surface) }, mWidth{ mSurface->Width() }, mHeight{ mSurface->Height() }
 	{
-		CreateAttachments(mSurface->GetFormat(), vk::ImageLayout::ePresentSrcKHR);
+		CreateAttachments(mSurface->Format(), vk::ImageLayout::ePresentSrcKHR);
 		CreateSubpasses();
 		CreateDependencies(vk::PipelineStageFlagBits::eColorAttachmentOutput, vk::AccessFlagBits::eColorAttachmentWrite);
 		CreateRenderPass();
 
-		mFramebuffers.resize(mSurface->GetViews().size());
-		for (u32 i = 0; i < mSurface->GetViews().size(); i++)
-			CreateFramebuffer(mSurface->GetViews()[i], i);
+		mFramebuffers.resize(mSurface->Views().size());
+		for (u32 i = 0; i < mSurface->Views().size(); i++)
+			CreateFramebuffer(mSurface->Views()[i], i);
 	}
 
 	VkRenderPass::VkRenderPass(const u32 frameCount, const u32 width, const u32 height)
@@ -30,7 +31,7 @@ namespace SnowEngine
 		for (u32 i = 0; i < frameCount; i++)
 		{
 			CreateImage(i);
-			CreateFramebuffer(mImages[i]->GetView(), i);
+			CreateFramebuffer(mImages[i]->View(), i);
 		}
 	}
 
@@ -53,38 +54,54 @@ namespace SnowEngine
 		
 			if (mSurface)
 			{
-				CreateFramebuffer(mSurface->GetViews()[frameIndex], frameIndex);
+				CreateFramebuffer(mSurface->Views()[frameIndex], frameIndex);
 				return;
 			}
 
 			mImages[frameIndex].reset();
 
 			CreateImage(frameIndex);
-			CreateFramebuffer(mImages[frameIndex]->GetView(), frameIndex);
+			CreateFramebuffer(mImages[frameIndex]->View(), frameIndex);
 		});
 	}
 
-	void VkRenderPass::Begin() const
+	void VkRenderPass::Begin(const std::shared_ptr<CommandBuffer>& cmd)
 	{
+		const auto& vkCmd = std::static_pointer_cast<VkCommandBuffer>(cmd);
+
+		if (mSurface && (mWidth != mSurface->Width() || mHeight != mSurface->Height()))
+		{
+			mWidth = mSurface->Width();
+			mHeight = mSurface->Height();
+
+			for (u32 i{ 0 }; i < mSurface->Views().size(); i++)
+			{
+				VkCore::Get()->Device().destroyFramebuffer(mFramebuffers[i]);
+				CreateFramebuffer(mSurface->Views()[i], i);
+			}
+		}
+
 		const vk::ClearValue clearColor{ vk::ClearColorValue{ std::array<float, 4>{0.0f, 0.0f, 0.0f, 1.0f} } };
 
 		vk::RenderPassBeginInfo beginInfo{};
 		beginInfo.renderPass = mRenderPass;
-		beginInfo.framebuffer = mFramebuffers[VkSurface::BoundSurface()->GetCurrentFrame()];
+		beginInfo.framebuffer = mFramebuffers[VkSurface::BoundSurface()->CurrentFrame()];
 		beginInfo.renderArea.offset = vk::Offset2D{ 0, 0 };
 		beginInfo.renderArea.extent = vk::Extent2D{ mWidth, mHeight };
 		beginInfo.clearValueCount = 1;
 		beginInfo.pClearValues = &clearColor;
 
-		VkSurface::BoundSurface()->GetCommandBuffer().setViewport(0, { { 0.0f, 0.0f, static_cast<f32>(mWidth), static_cast<f32>(mHeight), 0.0f, 1.0f } });
-		VkSurface::BoundSurface()->GetCommandBuffer().setScissor(0, vk::Rect2D{ {{0, 0}, mWidth, mHeight } });
+		vkCmd->CurrentBuffer().setViewport(0, { { 0.0f, 0.0f, static_cast<f32>(mWidth), static_cast<f32>(mHeight), 0.0f, 1.0f } });
+		vkCmd->CurrentBuffer().setScissor(0, vk::Rect2D{ {{0, 0}, mWidth, mHeight } });
 
-		VkSurface::BoundSurface()->GetCommandBuffer().beginRenderPass(beginInfo, vk::SubpassContents::eInline);
+		vkCmd->CurrentBuffer().beginRenderPass(beginInfo, vk::SubpassContents::eInline);
 	}
 
-	void VkRenderPass::End() const
+	void VkRenderPass::End(const std::shared_ptr<CommandBuffer>& cmd) const
 	{
-		VkSurface::BoundSurface()->GetCommandBuffer().endRenderPass();
+		const auto& vkCmd = std::static_pointer_cast<VkCommandBuffer>(cmd);
+
+		vkCmd->CurrentBuffer().endRenderPass();
 	}
 
 	void VkRenderPass::CreateAttachments(const vk::Format format, const vk::ImageLayout layout)

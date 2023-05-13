@@ -13,14 +13,16 @@ namespace SnowEngine
 		VkRenderPass(std::shared_ptr<const VkSurface> surface);
 		VkRenderPass(u32 frameCount, u32 width, u32 height);
 
-		vk::RenderPass RenderPass() const;
-		const std::vector<std::unique_ptr<VkImage>>& Images() const;
 		u32 Width() const override;
 		u32 Height() const override;
 
+		vk::RenderPass RenderPass() const;
+		const std::vector<std::unique_ptr<VkImage>>& Images() const;
+
+		void Begin(const std::shared_ptr<CommandBuffer>& cmd) override;
+		void End(const std::shared_ptr<CommandBuffer>& cmd) const override;
+
 		void Resize(u32 width, u32 height);
-		void Begin() const override;
-		void End() const override;
 
 	private:
 		void CreateAttachments(vk::Format format, vk::ImageLayout layout);

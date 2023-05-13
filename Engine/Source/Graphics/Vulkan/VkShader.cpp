@@ -41,6 +41,7 @@ namespace SnowEngine
 		{
 			case ShaderType::Vertex: return shaderc_vertex_shader;
 			case ShaderType::Fragment: return shaderc_fragment_shader;
+			case ShaderType::Compute: return shaderc_compute_shader;
 			default: return shaderc_glsl_infer_from_source;
 		}
 	}
@@ -51,6 +52,7 @@ namespace SnowEngine
 		{
 			case ShaderType::Vertex: return vk::ShaderStageFlagBits::eVertex;
 			case ShaderType::Fragment: return vk::ShaderStageFlagBits::eFragment;
+			case ShaderType::Compute: return vk::ShaderStageFlagBits::eCompute;
 			default: return vk::ShaderStageFlagBits::eAll;
 		}
 	}
@@ -92,7 +94,14 @@ namespace SnowEngine
 		}
 	}
 
-	std::vector<vk::PipelineShaderStageCreateInfo> VkShader::GetShaderStageInfos() const
+	VkShader::VkShader(const ComputeShaderSource& source)
+	{
+		const std::vector<u32> spv{ Compile(source.Comp) };
+		CreateModule(spv, vk::ShaderStageFlagBits::eCompute);
+		CreateReflection(spv, vk::ShaderStageFlagBits::eCompute);
+	}
+
+	std::vector<vk::PipelineShaderStageCreateInfo> VkShader::ShaderStageInfos() const
 	{
 		std::vector<vk::PipelineShaderStageCreateInfo> infos;
 		infos.resize(mModules.size());
@@ -112,7 +121,7 @@ namespace SnowEngine
 		return infos;
 	}
 
-	const std::map<set, VkDescriptorSetLayout>& VkShader::GetLayouts() const { return mDescriptorSetLayouts; }
+	const std::map<set, VkDescriptorSetLayout>& VkShader::Layouts() const { return mDescriptorSetLayouts; }
 
 	void VkShader::CreateModule(const std::vector<u32>& spv, const vk::ShaderStageFlagBits stage)
 	{
@@ -130,7 +139,7 @@ namespace SnowEngine
 		const spirv_cross::Compiler compiler{ spv };
 		spirv_cross::ShaderResources resources{ compiler.get_shader_resources() };
 
-		for (auto& resource : resources.uniform_buffers)
+		for (const auto& resource : resources.uniform_buffers)
 		{
 			const binding binding{ compiler.get_decoration(resource.id, spv::Decoration::DecorationBinding) };
 			const set set{ compiler.get_decoration(resource.id, spv::Decoration::DecorationDescriptorSet) };
@@ -160,7 +169,7 @@ namespace SnowEngine
 				mDescriptorSetLayouts.at(set).Resources.insert({ binding, res });
 		}
 
-		for (auto& resource : resources.sampled_images)
+		for (const auto& resource : resources.sampled_images)
 		{
 			const binding binding{ compiler.get_decoration(resource.id, spv::Decoration::DecorationBinding) };
 			const set set{ compiler.get_decoration(resource.id, spv::Decoration::DecorationDescriptorSet) };
@@ -175,6 +184,36 @@ namespace SnowEngine
 			res.LayoutBinding = layoutBinding;
 			res.Name = resource.name;
 			res.Type = VkResourceType::Image;
+
+			if (!mDescriptorSetLayouts.contains(set))
+			{
+				mDescriptorSetLayouts.insert({ set, {} });
+				mDescriptorSetLayouts.at(set).SetIndex = set;
+			}
+
+			if (!mDescriptorSetLayouts.at(set).Resources.contains(binding))
+				mDescriptorSetLayouts.at(set).Resources.insert({ binding, res });
+		}
+
+		for (const auto& resource : resources.storage_buffers)
+		{
+			const binding binding{ compiler.get_decoration(resource.id, spv::DecorationBinding) };
+			const set set{ compiler.get_decoration(resource.id, spv::DecorationDescriptorSet) };
+
+			const spirv_cross::SPIRType& type{ compiler.get_type(resource.base_type_id) };
+			const u32 size{ static_cast<u32>(compiler.get_declared_struct_size(type)) };
+
+			vk::DescriptorSetLayoutBinding layoutBinding{};
+			layoutBinding.binding = binding;
+			layoutBinding.descriptorCount = 1;
+			layoutBinding.descriptorType = vk::DescriptorType::eStorageBuffer;
+			layoutBinding.stageFlags = stage;
+
+			VkResource res;
+			res.LayoutBinding = layoutBinding;
+			res.Name = resource.name;
+			res.Size = size;
+			res.Type = VkResourceType::StorageBuffer;
 
 			if (!mDescriptorSetLayouts.contains(set))
 			{

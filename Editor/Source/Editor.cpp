@@ -6,19 +6,23 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include <chrono>
+#include <imgui.h>
 
 int main()
 {
 	SnowEngine::GraphicsCore::Init();
 	{
-		const auto window = SnowEngine::Window::Create("SnowEngine", 1920, 1080);
+		const auto window = SnowEngine::Window::Create("SnowEngine", 2560, 1440, true, true, true);
 		const auto surface = SnowEngine::Surface::Create(window);
-		const auto renderPass = SnowEngine::RenderPass::Create(2, 1920, 1080);
+		const auto renderPass = SnowEngine::RenderPass::Create(surface->ImageCount(), 1920, 1080);
 		const auto shader = SnowEngine::Shader::Create(
 		{
 			{ "D:/Dev/SnowEngine/Engine/Resources/Shaders/default.vert", SnowEngine::ShaderType::Vertex },
 			{ "D:/Dev/SnowEngine/Engine/Resources/Shaders/default.frag", SnowEngine::ShaderType::Fragment },
+			{}
 		});
+
+		const auto graphicsCmd = SnowEngine::CommandBuffer::Create(surface->ImageCount(), SnowEngine::CommandBufferUsage::Graphics);
 
 		const auto image = SnowEngine::Image::Create("D:/Dev/SnowEngine/Engine/Resources/Images/sus.png");
 
@@ -59,41 +63,62 @@ int main()
 
 		const auto gui = SnowEngine::Gui::Create(surface, renderPass);
 
-		static auto startTime = std::chrono::high_resolution_clock::now();
+		auto currentTime = std::chrono::high_resolution_clock::now();
+		auto lastTime = std::chrono::high_resolution_clock::now();
 		while (!window->Closing())
 		{
-			surface->Begin();
+			currentTime = std::chrono::high_resolution_clock::now();
+			const f32 time = std::chrono::duration<f32, std::chrono::seconds::period>(currentTime - lastTime).count();
 
-			auto currentTime = std::chrono::high_resolution_clock::now();
-			const f32 time = std::chrono::duration<f32, std::chrono::seconds::period>(currentTime - startTime).count();
+			surface->Begin();
 
 			camera.View = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 			camera.Projection = glm::perspective(glm::radians(45.0f), renderPass->Width() / static_cast<f32>(renderPass->Height()), 0.1f, 10.0f);
 			camera.Projection[1][1] *= -1;
 
-			transform.Model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+			transform.Model = glm::mat4(1.0f);
 
-			renderPass->Begin();
+			graphicsCmd->Begin(surface->CurrentFrame());
 
-			cameraDescriptorSet->SetUniform("Camera", &camera, surface->GetCurrentFrame());
-			modelDescriptorSet->SetUniform("Transform", &transform, surface->GetCurrentFrame());
+			renderPass->Begin(graphicsCmd);
 
-			pipeline->Bind();
-			pipeline->BindDescriptorSet(cameraDescriptorSet.get(), surface->GetCurrentFrame());
-			pipeline->BindDescriptorSet(modelDescriptorSet.get(), surface->GetCurrentFrame());
+			cameraDescriptorSet->SetUniform("Camera", &camera, surface->CurrentFrame());
+			modelDescriptorSet->SetUniform("Transform", &transform, surface->CurrentFrame());
 
-			vertexBuffer->Bind();
-			indexBuffer->Bind();
-			indexBuffer->Draw();
+			pipeline->Bind(graphicsCmd);
+			pipeline->BindDescriptorSet(cameraDescriptorSet.get(), surface->CurrentFrame(), graphicsCmd);
+			pipeline->BindDescriptorSet(modelDescriptorSet.get(), surface->CurrentFrame(), graphicsCmd);
 
-			renderPass->End();
+			vertexBuffer->Bind(graphicsCmd);
+			indexBuffer->Bind(graphicsCmd);
+			indexBuffer->Draw(graphicsCmd);
 
-			gui->Begin();
-			gui->End();
+			renderPass->End(graphicsCmd);
 
-			surface->End();
+			gui->Begin(graphicsCmd);
+
+			if (ImGui::Begin("Entities"))
+			{
+
+			}
+			ImGui::End();
+			if (ImGui::Begin("Components"))
+			{
+
+			}
+			ImGui::End();
+
+			gui->End(graphicsCmd);
+
+			graphicsCmd->End(surface->CurrentFrame());
+
+			graphicsCmd->Submit(surface->CurrentFrame(), surface);
+
+			surface->End(graphicsCmd);
 
 			SnowEngine::Window::Update();
+
+			lastTime = currentTime;
 		}
 	}
 	SnowEngine::GraphicsCore::Shutdown();

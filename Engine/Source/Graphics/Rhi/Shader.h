@@ -7,6 +7,7 @@ namespace SnowEngine
 	{
 		Vertex,
 		Fragment,
+		Compute
 	};
 
 	using shaderSource = std::tuple<std::filesystem::path, ShaderType>;
@@ -19,9 +20,15 @@ namespace SnowEngine
 		std::vector<shaderSource> Others;
 	};
 
+	struct ComputeShaderSource
+	{
+		shaderSource Comp;
+	};
+
 	class Shader
 	{
 	public:
 		static std::shared_ptr<Shader> Create(const GraphicShaderSource& source);
+		static std::shared_ptr<Shader> Create(const ComputeShaderSource& source);
 	};
 }

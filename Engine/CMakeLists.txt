@@ -6,6 +6,8 @@
 
 						  "Source/Graphics/Rhi/Buffers.cpp"
 						  "Source/Graphics/Rhi/Buffers.h"
+						  "Source/Graphics/Rhi/CommandBuffer.cpp"
+						  "Source/Graphics/Rhi/CommandBuffer.h" 
 						  "Source/Graphics/Rhi/Core.cpp"
 						  "Source/Graphics/Rhi/Core.h"
 						  "Source/Graphics/Rhi/DescriptorSet.cpp"
@@ -25,6 +27,8 @@
 
 						  "Source/Graphics/Vulkan/VkBuffers.cpp"
 						  "Source/Graphics/Vulkan/VkBuffers.h" 
+						  "Source/Graphics/Vulkan/VkCommandBuffer.cpp"
+						  "Source/Graphics/Vulkan/VkCommandBuffer.h"
 						  "Source/Graphics/Vulkan/VkCore.cpp" 
 						  "Source/Graphics/Vulkan/VkCore.h"
 						  "Source/Graphics/Vulkan/VkDescriptorSet.cpp"

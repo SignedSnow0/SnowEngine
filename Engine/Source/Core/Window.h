@@ -10,7 +10,7 @@ namespace SnowEngine
 	{
 	public:
 		static std::shared_ptr<Window> Create(const char* title, i32 width, i32 height);
-		static std::shared_ptr<Window> Create(const char* title, i32 width, i32 height, b8 resizable, b8 visible);
+		static std::shared_ptr<Window> Create(const char* title, i32 width, i32 height, b8 resizable, b8 visible, b8 maximixed);
 		~Window();
 
 		b8 Closing() const;
@@ -20,7 +20,7 @@ namespace SnowEngine
 
 		static void Update();
 
-		Window(const char* title, i32 width, i32 height, b8 resizable, b8 visible);
+		Window(const char* title, i32 width, i32 height, b8 resizable, b8 visible, b8 maximized);
 
 	protected:
 		GLFWwindow* mWindow{ nullptr };

@@ -13,9 +13,9 @@ namespace SnowEngine
 		CreateBuffers();
 	}
 
-	const std::vector<vk::DescriptorSet>& VkDescriptorSet::GetSets() const {	return mSets; }
+	const std::vector<vk::DescriptorSet>& VkDescriptorSet::Sets() const {	return mSets; }
 
-	set VkDescriptorSet::GetSetIndex() const { return mLayout.SetIndex; }
+	set VkDescriptorSet::SetIndex() const { return mLayout.SetIndex; }
 
 	void VkDescriptorSet::SetUniform(const std::string& name, const void* data, const u32 currentFrame) const
 	{
@@ -28,14 +28,14 @@ namespace SnowEngine
 
 	void VkDescriptorSet::SetImage(const std::string& name, const Image* image) const
 	{
-		const VkImage* vkImage{ reinterpret_cast<const VkImage*>(image) };
+		const auto vkImage{ reinterpret_cast<const VkImage*>(image) };
 		for (const auto& [binding, resource]:mLayout.Resources)
 		{
 			if (resource.Name == name && resource.Type == VkResourceType::Image)
 			{
 				vk::DescriptorImageInfo imageInfo{};
-				imageInfo.imageLayout = vkImage->GetLayout();
-				imageInfo.imageView = vkImage->GetView();
+				imageInfo.imageLayout = vkImage->Layout();
+				imageInfo.imageView = vkImage->View();
 				imageInfo.sampler = mImages.at(binding);
 
 				for (const auto set : mSets)
@@ -54,25 +54,60 @@ namespace SnowEngine
 		}
 	}
 
+	void VkDescriptorSet::SetStorageBuffer(const std::string& name, const std::shared_ptr<StorageBuffer>& buffer)
+	{
+		for (const auto& [binding, resource] : mLayout.Resources)
+		{
+			if (resource.Name == name && resource.Type == VkResourceType::StorageBuffer)
+			{
+				mStorageBuffers[binding] = std::static_pointer_cast<VkStorageBuffer>(buffer);
+
+ 				for (u32 i{ 0 }; i < mSets.size(); i++)
+				{
+					vk::DescriptorBufferInfo bufferInfo{};
+					bufferInfo.buffer = mStorageBuffers[binding]->Buffers()->Buffer();
+					bufferInfo.offset = 0;
+					bufferInfo.range = mStorageBuffers[binding]->Buffers()->Size();
+
+					vk::WriteDescriptorSet descriptorWrite{};
+					descriptorWrite.pBufferInfo = &bufferInfo;
+					descriptorWrite.descriptorType = vk::DescriptorType::eStorageBuffer;
+					descriptorWrite.descriptorCount = 1;
+					descriptorWrite.dstBinding = binding;
+					descriptorWrite.dstArrayElement = 0;
+					descriptorWrite.dstSet = mSets.at(i);
+
+					VkCore::Get()->Device().updateDescriptorSets(descriptorWrite, nullptr);
+				}
+			}
+		}
+
+	}
+
 	void VkDescriptorSet::CreatePool()
 	{
 		std::vector<vk::DescriptorPoolSize> sizes{};
-		u32 uniformCount{ 0 }, imageCount{ 0 };
+		u32 uniformCount{ 0 }, imageCount{ 0 }, storageBufferCount{ 0 };
 		for(const auto& [binding, resource] : mLayout.Resources)
 		{
 			if (resource.Type == VkResourceType::Uniform)
 				uniformCount++;
 			else if (resource.Type == VkResourceType::Image)
 				imageCount++;
+			else if (resource.Type == VkResourceType::StorageBuffer)
+				storageBufferCount++;
 		}
 
 		uniformCount *= mFrameCount;
 		imageCount *= mFrameCount;
+		storageBufferCount *= mFrameCount;
 
 		if (uniformCount)
-			sizes.push_back({ vk::DescriptorType::eUniformBuffer, uniformCount });
+			sizes.emplace_back(vk::DescriptorType::eUniformBuffer, uniformCount);
 		if (imageCount)
-			sizes.push_back({ vk::DescriptorType::eCombinedImageSampler, imageCount });
+			sizes.emplace_back(vk::DescriptorType::eCombinedImageSampler, imageCount);
+		if (storageBufferCount)
+			sizes.emplace_back(vk::DescriptorType::eStorageBuffer, storageBufferCount);
 
 		vk::DescriptorPoolCreateInfo createInfo{};
 		createInfo.poolSizeCount = static_cast<u32>(sizes.size());
@@ -102,12 +137,12 @@ namespace SnowEngine
 				mUniforms.insert({ binding, std::make_unique<VkUniformBuffer>(resource.Size, mFrameCount) });
 
 				u32 i{ 0 };
-				for (const auto buffer : mUniforms.at(binding)->GetBuffers())
+				for (const auto& buffer : mUniforms.at(binding)->Buffers())
 				{
 					vk::DescriptorBufferInfo bufferInfo{};
-					bufferInfo.buffer = buffer->GetBuffer();
+					bufferInfo.buffer = buffer->Buffer();
 					bufferInfo.offset = 0;
-					bufferInfo.range = buffer->GetSize();
+					bufferInfo.range = buffer->Size();
 
 					vk::WriteDescriptorSet descriptorWrite{};
 					descriptorWrite.pBufferInfo = &bufferInfo;
@@ -141,6 +176,29 @@ namespace SnowEngine
 				createInfo.borderColor = vk::BorderColor::eIntOpaqueBlack;
 
 				mImages.insert({ binding, VkCore::Get()->Device().createSampler(createInfo) });
+			}
+
+			if (resource.Type == VkResourceType::StorageBuffer)
+			{
+				mStorageBuffers.insert({ binding, std::make_unique<VkStorageBuffer>(64) });
+
+				for (u32 i{ 0 }; i < mSets.size(); i++)
+				{
+					vk::DescriptorBufferInfo bufferInfo{};
+					bufferInfo.buffer = mStorageBuffers[binding]->Buffers()->Buffer();
+					bufferInfo.offset = 0;
+					bufferInfo.range = mStorageBuffers[binding]->Buffers()->Size();
+
+					vk::WriteDescriptorSet descriptorWrite{};
+					descriptorWrite.pBufferInfo = &bufferInfo;
+					descriptorWrite.descriptorType = vk::DescriptorType::eStorageBuffer;
+					descriptorWrite.descriptorCount = 1;
+					descriptorWrite.dstBinding = binding;
+					descriptorWrite.dstArrayElement = 0;
+					descriptorWrite.dstSet = mSets.at(i);
+
+					VkCore::Get()->Device().updateDescriptorSets(descriptorWrite, nullptr);
+				}
 			}
 		}
 	}

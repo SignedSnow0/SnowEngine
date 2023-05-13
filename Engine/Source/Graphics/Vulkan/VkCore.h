@@ -8,10 +8,13 @@
 
 namespace SnowEngine
 {
-	struct VkQueue
+	struct VkQueues
 	{
-		u32 Family{ static_cast<u32>(-1) };
-		vk::Queue Queue;
+		std::pair<u32, vk::Queue> Graphics = { UINT32_MAX, nullptr };
+		std::pair<u32, vk::Queue> Present = { UINT32_MAX, nullptr };
+		std::pair<u32, vk::Queue> Compute = { UINT32_MAX, nullptr };
+
+		b8 IsComplete() const;
 	};
 
 	class VkCore : public GraphicsCore
@@ -23,7 +26,7 @@ namespace SnowEngine
 		const vk::Device& Device() const;
 		const vk::PhysicalDevice& PhysicalDevice() const;
 		const vk::Instance& Instance() const;
-		const std::vector<VkQueue>& Queues() const; //TODO: magic values
+		VkQueues Queues() const;
 		VmaAllocator Allocator() const;
 
 		void SubmitInstantCommand(std::function<void(vk::CommandBuffer cmd)>&& command) const;
@@ -39,7 +42,7 @@ namespace SnowEngine
 		void CreateAllocator();
 		void CreateInstantCommandPool();
 
-		std::pair<b8, std::vector<VkQueue>> IsDeviceSuitable(const vk::PhysicalDevice& device) const;
+		std::pair<b8, VkQueues> IsDeviceSuitable(const vk::PhysicalDevice& device) const;
 		static b8 CheckExtensionSupport(const vk::PhysicalDevice& device, const std::vector<const char*>& extensions);
 		static std::vector<const char*> GetDeviceExtensions();
 		static std::vector<const char*> GetRequiredExtensions();
@@ -49,7 +52,7 @@ namespace SnowEngine
 		vk::DebugUtilsMessengerEXT mMessenger;
 		vk::PhysicalDevice mPhysicalDevice;
 		vk::Device mDevice;
-		std::vector<VkQueue> mQueues;
+		VkQueues mQueues;
 		VmaAllocator mAllocator;
 		vk::CommandPool mInstantCommandPool;
 		static VkCore* sInstance;
