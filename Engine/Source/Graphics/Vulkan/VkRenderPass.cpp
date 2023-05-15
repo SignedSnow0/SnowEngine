@@ -5,14 +5,20 @@
 
 namespace SnowEngine
 {
+<<<<<<< HEAD
 	VkRenderPass::VkRenderPass(std::shared_ptr<const VkSurface> surface, const b8 depth)
 		: mSurface{ std::move(surface) }, mWidth{ mSurface->Width() }, mHeight{ mSurface->Height() }, mHasDepth{ depth }
+=======
+	VkRenderPass::VkRenderPass(std::shared_ptr<const VkSurface> surface)
+		: mSurface{ std::move(surface) }, mWidth{ mSurface->Width() }, mHeight{ mSurface->Height() }
+>>>>>>> 82bf1ed14055334cdce1014d7850da732bbad42a
 	{
 		CreateAttachments(mSurface->Format(), vk::ImageLayout::ePresentSrcKHR);
 		CreateSubpasses();
 		CreateDependencies(vk::PipelineStageFlagBits::eColorAttachmentOutput, vk::AccessFlagBits::eColorAttachmentWrite);
 		CreateRenderPass();
 
+<<<<<<< HEAD
 		if (mHasDepth)
 		{
 			mDepthImages.resize(mSurface->Views().size());
@@ -29,6 +35,11 @@ namespace SnowEngine
 
 			CreateFramebuffer(views, i);
 		}
+=======
+		mFramebuffers.resize(mSurface->Views().size());
+		for (u32 i = 0; i < mSurface->Views().size(); i++)
+			CreateFramebuffer(mSurface->Views()[i], i);
+>>>>>>> 82bf1ed14055334cdce1014d7850da732bbad42a
 	}
 
 	VkRenderPass::VkRenderPass(const u32 frameCount, const u32 width, const u32 height, const b8 depth)
@@ -47,6 +58,7 @@ namespace SnowEngine
 		for (u32 i = 0; i < frameCount; i++)
 		{
 			CreateImage(i);
+<<<<<<< HEAD
 
 			std::vector<vk::ImageView> views{ mImages[i]->View() };
 			if (mHasDepth)
@@ -56,6 +68,9 @@ namespace SnowEngine
 			}
 
 			CreateFramebuffer(views, i);
+=======
+			CreateFramebuffer(mImages[i]->View(), i);
+>>>>>>> 82bf1ed14055334cdce1014d7850da732bbad42a
 		}
 	}
 
@@ -80,6 +95,7 @@ namespace SnowEngine
 		
 			if (mSurface)
 			{
+<<<<<<< HEAD
 				std::vector<vk::ImageView> views{ mSurface->Views()[frameIndex] };
 				if (mHasDepth)
 				{
@@ -89,12 +105,16 @@ namespace SnowEngine
 
 				CreateFramebuffer(views, frameIndex);
 
+=======
+				CreateFramebuffer(mSurface->Views()[frameIndex], frameIndex);
+>>>>>>> 82bf1ed14055334cdce1014d7850da732bbad42a
 				return;
 			}
 
 			mImages[frameIndex].reset();
 
 			CreateImage(frameIndex);
+<<<<<<< HEAD
 			std::vector<vk::ImageView> views{ mImages[frameIndex]->View() };
 			if (mHasDepth)
 			{
@@ -102,6 +122,9 @@ namespace SnowEngine
 				views.emplace_back(mDepthImages[frameIndex]->View());
 			}
 			CreateFramebuffer(views, frameIndex);
+=======
+			CreateFramebuffer(mImages[frameIndex]->View(), frameIndex);
+>>>>>>> 82bf1ed14055334cdce1014d7850da732bbad42a
 		});
 	}
 
@@ -117,6 +140,7 @@ namespace SnowEngine
 			for (u32 i{ 0 }; i < mSurface->Views().size(); i++)
 			{
 				VkCore::Get()->Device().destroyFramebuffer(mFramebuffers[i]);
+<<<<<<< HEAD
 
 				std::vector<vk::ImageView> views{ mSurface->Views()[i] };
 				if (mHasDepth)
@@ -126,6 +150,9 @@ namespace SnowEngine
 				}
 
 				CreateFramebuffer(views, i);
+=======
+				CreateFramebuffer(mSurface->Views()[i], i);
+>>>>>>> 82bf1ed14055334cdce1014d7850da732bbad42a
 			}
 		}
 

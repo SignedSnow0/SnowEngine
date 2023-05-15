@@ -41,7 +41,11 @@ ParticleTest::ParticleTest()
 
 	mWindow = SnowEngine::Window::Create("Particle Test", 1920, 1080);
 	mSurface = SnowEngine::Surface::Create(mWindow);
+<<<<<<< HEAD
 	mRenderPass = SnowEngine::RenderPass::Create(mSurface, false);
+=======
+	mRenderPass = SnowEngine::RenderPass::Create(mSurface);
+>>>>>>> 82bf1ed14055334cdce1014d7850da732bbad42a
 
 	mShader = SnowEngine::Shader::Create(
 	{

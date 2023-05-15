@@ -15,17 +15,29 @@ int main()
 	{
 		const auto window = SnowEngine::Window::Create("SnowEngine", 2560, 1440);
 		const auto surface = SnowEngine::Surface::Create(window);
+<<<<<<< HEAD
 		const auto renderPass = SnowEngine::RenderPass::Create(surface->ImageCount(), 1920, 1080, true);
 		const auto shader = SnowEngine::Shader::Create(
 		{
 			{ "C:/Dev/SnowEngine/Engine/Resources/Shaders/default.vert", SnowEngine::ShaderType::Vertex },
 			{ "C:/Dev/SnowEngine/Engine/Resources/Shaders/default.frag", SnowEngine::ShaderType::Fragment },
+=======
+		const auto renderPass = SnowEngine::RenderPass::Create(surface->ImageCount(), 1920, 1080);
+		const auto shader = SnowEngine::Shader::Create(
+		{
+			{ "D:/Dev/SnowEngine/Engine/Resources/Shaders/default.vert", SnowEngine::ShaderType::Vertex },
+			{ "D:/Dev/SnowEngine/Engine/Resources/Shaders/default.frag", SnowEngine::ShaderType::Fragment },
+>>>>>>> 82bf1ed14055334cdce1014d7850da732bbad42a
 			{}
 		});
 
 		const auto graphicsCmd = SnowEngine::CommandBuffer::Create(surface->ImageCount(), SnowEngine::CommandBufferUsage::Graphics);
 
+<<<<<<< HEAD
 		const auto image = SnowEngine::Image::Create("C:/Dev/SnowEngine/Engine/Resources/Images/sus.png");
+=======
+		const auto image = SnowEngine::Image::Create("D:/Dev/SnowEngine/Engine/Resources/Images/sus.png");
+>>>>>>> 82bf1ed14055334cdce1014d7850da732bbad42a
 
 		const auto pipeline = SnowEngine::Pipeline::Create(shader, renderPass, 2560, 1440);
 
@@ -100,6 +112,7 @@ int main()
 			renderPass->End(graphicsCmd);
 
 			gui->Begin(graphicsCmd);
+<<<<<<< HEAD
 
 			ImGui::ShowStyleEditor();
 			ImGui::ShowDemoWindow();
@@ -107,6 +120,12 @@ int main()
 			if (ImGui::Begin("Entities"))
 			{
 			
+=======
+
+			if (ImGui::Begin("Entities"))
+			{
+
+>>>>>>> 82bf1ed14055334cdce1014d7850da732bbad42a
 			}
 			ImGui::End();
 			if (ImGui::Begin("Components"))

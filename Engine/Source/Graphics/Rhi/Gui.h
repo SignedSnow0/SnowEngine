@@ -14,10 +14,13 @@ namespace SnowEngine
 
 		virtual void Begin(const std::shared_ptr<CommandBuffer>& cmd) = 0;
 		virtual void End(const std::shared_ptr<CommandBuffer>& cmd) = 0;
+<<<<<<< HEAD
 
 	private:
 		static void DarkTheme();
 
 		static b8 sInitialized;
+=======
+>>>>>>> 82bf1ed14055334cdce1014d7850da732bbad42a
 	};
 }
