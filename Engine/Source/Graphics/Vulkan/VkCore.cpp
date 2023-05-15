@@ -23,6 +23,13 @@ namespace SnowEngine
 
 	VkCore* VkCore::sInstance{ nullptr };
 
+	b8 VkQueues::IsComplete() const
+	{
+		return Graphics.first != UINT32_MAX
+			&& Present.first != UINT32_MAX
+			&& Compute.first != UINT32_MAX;
+	}
+
 	/**
 	 * \brief Creates a new instance of VkCore if one does not already exist.
 	 * \return Either the new instance or the existing instance.
@@ -49,22 +56,22 @@ namespace SnowEngine
 
 	const vk::Instance& VkCore::Instance() const { return mInstance; }
 
-	const std::vector<VkQueue>& VkCore::Queues() const { return mQueues; }
+	VkQueues VkCore::Queues() const { return mQueues; }
 
 	VmaAllocator VkCore::Allocator() const { return mAllocator; }
 
-	void VkCore::SubmitInstantCommand(std::function<void(const vk::CommandBuffer cmd)>&& command) const
+	void VkCore::SubmitInstantCommand(std::function<void(vk::CommandBuffer cmd)>&& command) const
 	{
 		vk::CommandBufferAllocateInfo allocInfo{};
 		allocInfo.level = vk::CommandBufferLevel::ePrimary;
 		allocInfo.commandPool = mInstantCommandPool;
 		allocInfo.commandBufferCount = 1;
 
-		const vk::CommandBuffer commandBuffer{ mDevice.allocateCommandBuffers(allocInfo)[0] };
+		static const vk::CommandBuffer commandBuffer{ mDevice.allocateCommandBuffers(allocInfo)[0] };
 
-		vk::CommandBufferBeginInfo beginInfo{};
-		beginInfo.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit;
+		const vk::CommandBufferBeginInfo beginInfo{};
 
+		commandBuffer.reset();
 		commandBuffer.begin(beginInfo);
 
 		command(commandBuffer);
@@ -75,10 +82,8 @@ namespace SnowEngine
 		submitInfo.commandBufferCount = 1;
 		submitInfo.pCommandBuffers = &commandBuffer;
 
-		mQueues[0].Queue.submit(submitInfo, nullptr);
-		mQueues[0].Queue.waitIdle();
-
-		mDevice.resetCommandPool(mInstantCommandPool);
+		mQueues.Graphics.second.submit(submitInfo, nullptr);
+		mQueues.Graphics.second.waitIdle();
 	}
 
 	const VkCore* VkCore::Get() { return sInstance; }
@@ -147,14 +152,17 @@ namespace SnowEngine
 
 	void VkCore::CreateLogicalDevice()
 	{
-		std::set<u32> uniqueQueueFamilies{};
-		for (const auto& [family, _] : mQueues)
-			uniqueQueueFamilies.insert(family);
+		std::set<u32> uniqueQueueFamilies
+		{
+			mQueues.Graphics.first,
+			mQueues.Present.first,
+			mQueues.Compute.first
+		};
 
 		std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos{ uniqueQueueFamilies.size() };
 		u32 i{ 0 };
 		f32 queuePriority{ 1.0f };
-		for(const auto& family : uniqueQueueFamilies)
+		for (const auto& family : uniqueQueueFamilies)
 		{
 			vk::DeviceQueueCreateInfo queueCreateInfo{};
 			queueCreateInfo.queueFamilyIndex = family;
@@ -178,10 +186,9 @@ namespace SnowEngine
 
 		mDevice = mPhysicalDevice.createDevice(createInfo);
 
-		for (auto& [family, queue] : mQueues)
-		{
-			queue = mDevice.getQueue(family, 0);
-		}
+		mQueues.Graphics.second = mDevice.getQueue(mQueues.Graphics.first, 0);
+		mQueues.Present.second = mDevice.getQueue(mQueues.Present.first, 0);
+		mQueues.Compute.second = mDevice.getQueue(mQueues.Compute.first, 0);
 	}
 
 	void VkCore::CreateAllocator()
@@ -198,17 +205,16 @@ namespace SnowEngine
 	void VkCore::CreateInstantCommandPool()
 	{
 		vk::CommandPoolCreateInfo createInfo{};
-		createInfo.queueFamilyIndex = mQueues[0].Family;
+		createInfo.queueFamilyIndex = mQueues.Graphics.first;
 		createInfo.flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer;
 
 		mInstantCommandPool = mDevice.createCommandPool(createInfo);
 	}
 
-	std::pair<b8, std::vector<VkQueue>> VkCore::IsDeviceSuitable(const vk::PhysicalDevice& device) const
+	std::pair<b8, VkQueues> VkCore::IsDeviceSuitable(const vk::PhysicalDevice& device) const
 	{
 		b8 suitable{ true };
-		VkQueue graphicsQueue{};
-		VkQueue presentQueue{};
+		VkQueues queues{};
 
 		const auto window = Window::Create("Query window", 100, 100, false, false, false);
 		VkSurfaceKHR surface;
@@ -219,19 +225,16 @@ namespace SnowEngine
 		for (const auto& queueFamily : queueFamilies)
 		{
 			if (queueFamily.queueFlags & vk::QueueFlagBits::eGraphics)
-			{
-				graphicsQueue.Family = i;
-			}
+				queues.Graphics.first = i;
 
 			if (device.getSurfaceSupportKHR(i, surface))
-			{
-				presentQueue.Family = i;
-			}
+				queues.Present.first = i;
 
-			if (graphicsQueue.Family != static_cast<u32>(-1) && presentQueue.Family != static_cast<u32>(-1))
-			{
+			if (queueFamily.queueFlags & vk::QueueFlagBits::eCompute)
+				queues.Compute.first = i;
+
+			if (queues.IsComplete())
 				break;
-			}
 
 			i++;
 		}
@@ -240,9 +243,9 @@ namespace SnowEngine
 		const vk::PhysicalDeviceFeatures features{ device.getFeatures() };
 
 		suitable &= CheckExtensionSupport(device, GetDeviceExtensions());
-		suitable &= graphicsQueue.Family != static_cast<u32>(-1) && presentQueue.Family != static_cast<u32>(-1);
+		suitable &= queues.IsComplete();
 
-		return { suitable, { graphicsQueue, presentQueue } };
+		return { suitable, queues };
 	}
 
 	b8 VkCore::CheckExtensionSupport(const vk::PhysicalDevice& device, const std::vector<const char*>& extensions)

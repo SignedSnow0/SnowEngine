@@ -7,4 +7,9 @@ namespace SnowEngine
 	{
 		return std::make_shared<VkShader>(source);
 	}
+
+	std::shared_ptr<Shader> Shader::Create(const ComputeShaderSource& source)
+	{
+		return std::make_shared<VkShader>(source);
+	}
 }

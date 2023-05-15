@@ -13,7 +13,8 @@ namespace SnowEngine
 	enum class VkResourceType : u32
 	{
 		Uniform,
-		Image
+		Image,
+		StorageBuffer
 	};
 
 	struct VkResource
@@ -36,9 +37,10 @@ namespace SnowEngine
 	{
 	public:
 		VkShader(const GraphicShaderSource& source);
+		VkShader(const ComputeShaderSource& source);
 
-		std::vector<vk::PipelineShaderStageCreateInfo> GetShaderStageInfos() const;
-		const std::map<set, VkDescriptorSetLayout>& GetLayouts() const;
+		std::vector<vk::PipelineShaderStageCreateInfo> ShaderStageInfos() const;
+		const std::map<set, VkDescriptorSetLayout>& Layouts() const;
 
 	private:
 		void CreateModule(const std::vector<u32>& spv, vk::ShaderStageFlagBits stage);

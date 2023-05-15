@@ -1,42 +1,69 @@
 #include "VkRenderPass.h"
 
 #include "VkCore.h"
+#include "VkCommandBuffer.h"
 
 namespace SnowEngine
 {
-	VkRenderPass::VkRenderPass(std::shared_ptr<const VkSurface> surface)
-		: mSurface{ std::move(surface) }, mWidth{ mSurface->GetWidth() }, mHeight{ mSurface->GetHeight() }
+	VkRenderPass::VkRenderPass(std::shared_ptr<const VkSurface> surface, const b8 depth)
+		: mSurface{ std::move(surface) }, mWidth{ mSurface->Width() }, mHeight{ mSurface->Height() }, mHasDepth{ depth }
 	{
-		CreateAttachments(mSurface->GetFormat(), vk::ImageLayout::ePresentSrcKHR);
+		CreateAttachments(mSurface->Format(), vk::ImageLayout::ePresentSrcKHR);
 		CreateSubpasses();
 		CreateDependencies(vk::PipelineStageFlagBits::eColorAttachmentOutput, vk::AccessFlagBits::eColorAttachmentWrite);
 		CreateRenderPass();
 
-		mFramebuffers.resize(mSurface->GetViews().size());
-		for (u32 i = 0; i < mSurface->GetViews().size(); i++)
-			CreateFramebuffer(mSurface->GetViews()[i], i);
+		if (mHasDepth)
+		{
+			mDepthImages.resize(mSurface->Views().size());
+			for (u32 i = 0; i < mSurface->Views().size(); i++)
+				CreateDepthImage(i);
+		}
+
+		mFramebuffers.resize(mSurface->Views().size());
+		for (u32 i = 0; i < mSurface->Views().size(); i++)
+		{
+			std::vector<vk::ImageView> views{ mSurface->Views()[i] };
+			if (mHasDepth)
+				views.emplace_back(mDepthImages[i]->View());
+
+			CreateFramebuffer(views, i);
+		}
 	}
 
-	VkRenderPass::VkRenderPass(const u32 frameCount, const u32 width, const u32 height)
-		: mWidth{ width }, mHeight{ height }
+	VkRenderPass::VkRenderPass(const u32 frameCount, const u32 width, const u32 height, const b8 depth)
+		: mWidth{ width }, mHeight{ height }, mHasDepth{ depth }
 	{
 		CreateAttachments(vk::Format::eB8G8R8A8Srgb, vk::ImageLayout::eShaderReadOnlyOptimal);
 		CreateSubpasses();
 		CreateDependencies(vk::PipelineStageFlagBits::eFragmentShader, vk::AccessFlagBits::eShaderRead);
 		CreateRenderPass();
 
+		if (mHasDepth)
+			mDepthImages.resize(frameCount);
+
 		mImages.resize(frameCount);
 		mFramebuffers.resize(frameCount);
 		for (u32 i = 0; i < frameCount; i++)
 		{
 			CreateImage(i);
-			CreateFramebuffer(mImages[i]->GetView(), i);
+
+			std::vector<vk::ImageView> views{ mImages[i]->View() };
+			if (mHasDepth)
+			{
+				CreateDepthImage(i);
+				views.emplace_back(mDepthImages[i]->View());
+			}
+
+			CreateFramebuffer(views, i);
 		}
 	}
 
 	vk::RenderPass VkRenderPass::RenderPass() const { return mRenderPass; }
 
 	const std::vector<std::unique_ptr<VkImage>>& VkRenderPass::Images() const { return mImages; }
+
+	b8 VkRenderPass::HasDepth() const { return mHasDepth; }
 
 	u32 VkRenderPass::Width() const { return mWidth; }
 
@@ -53,54 +80,82 @@ namespace SnowEngine
 		
 			if (mSurface)
 			{
-				CreateFramebuffer(mSurface->GetViews()[frameIndex], frameIndex);
+				std::vector<vk::ImageView> views{ mSurface->Views()[frameIndex] };
+				if (mHasDepth)
+				{
+					CreateDepthImage(frameIndex);
+					views.emplace_back(mDepthImages[frameIndex]->View());
+				}
+
+				CreateFramebuffer(views, frameIndex);
+
 				return;
 			}
 
 			mImages[frameIndex].reset();
 
 			CreateImage(frameIndex);
-			CreateFramebuffer(mImages[frameIndex]->GetView(), frameIndex);
+			std::vector<vk::ImageView> views{ mImages[frameIndex]->View() };
+			if (mHasDepth)
+			{
+				CreateDepthImage(frameIndex);
+				views.emplace_back(mDepthImages[frameIndex]->View());
+			}
+			CreateFramebuffer(views, frameIndex);
 		});
 	}
 
-	void VkRenderPass::Begin()
+	void VkRenderPass::Begin(const std::shared_ptr<CommandBuffer>& cmd)
 	{
-		if (mSurface && (mWidth != mSurface->GetWidth() || mHeight != mSurface->GetHeight()))
-		{
-			mWidth = mSurface->GetWidth();
-			mHeight = mSurface->GetHeight();
+		const auto& vkCmd = std::static_pointer_cast<VkCommandBuffer>(cmd);
 
-			for (u32 i{ 0 }; i < mSurface->GetViews().size(); i++)
+		if (mSurface && (mWidth != mSurface->Width() || mHeight != mSurface->Height()))
+		{
+			mWidth = mSurface->Width();
+			mHeight = mSurface->Height();
+
+			for (u32 i{ 0 }; i < mSurface->Views().size(); i++)
 			{
 				VkCore::Get()->Device().destroyFramebuffer(mFramebuffers[i]);
-				CreateFramebuffer(mSurface->GetViews()[i], i);
+
+				std::vector<vk::ImageView> views{ mSurface->Views()[i] };
+				if (mHasDepth)
+				{
+					CreateDepthImage(i);
+					views.emplace_back(mDepthImages[i]->View());
+				}
+
+				CreateFramebuffer(views, i);
 			}
 		}
 
-		const vk::ClearValue clearColor{ vk::ClearColorValue{ std::array<float, 4>{0.0f, 0.0f, 0.0f, 1.0f} } };
+		std::vector<vk::ClearValue> clearColors{ vk::ClearColorValue{ std::array<float, 4>{0.0f, 0.0f, 0.0f, 1.0f} } };
+		if(mHasDepth)
+			clearColors.emplace_back(vk::ClearDepthStencilValue{ 1.0f, 0 });
 
 		vk::RenderPassBeginInfo beginInfo{};
 		beginInfo.renderPass = mRenderPass;
-		beginInfo.framebuffer = mFramebuffers[VkSurface::BoundSurface()->GetCurrentFrame()];
+		beginInfo.framebuffer = mFramebuffers[VkSurface::BoundSurface()->CurrentFrame()];
 		beginInfo.renderArea.offset = vk::Offset2D{ 0, 0 };
 		beginInfo.renderArea.extent = vk::Extent2D{ mWidth, mHeight };
-		beginInfo.clearValueCount = 1;
-		beginInfo.pClearValues = &clearColor;
+		beginInfo.clearValueCount = static_cast<u32>(clearColors.size());
+		beginInfo.pClearValues = clearColors.data();
 
-		VkSurface::BoundSurface()->GetCommandBuffer().setViewport(0, { { 0.0f, 0.0f, static_cast<f32>(mWidth), static_cast<f32>(mHeight), 0.0f, 1.0f } });
-		VkSurface::BoundSurface()->GetCommandBuffer().setScissor(0, vk::Rect2D{ {{0, 0}, mWidth, mHeight } });
+		vkCmd->CurrentBuffer().setViewport(0, { { 0.0f, 0.0f, static_cast<f32>(mWidth), static_cast<f32>(mHeight), 0.0f, 1.0f } });
+		vkCmd->CurrentBuffer().setScissor(0, vk::Rect2D{ {{0, 0}, mWidth, mHeight } });
 
-		VkSurface::BoundSurface()->GetCommandBuffer().beginRenderPass(beginInfo, vk::SubpassContents::eInline);
+		vkCmd->CurrentBuffer().beginRenderPass(beginInfo, vk::SubpassContents::eInline);
 	}
 
-	void VkRenderPass::End() const
+	void VkRenderPass::End(const std::shared_ptr<CommandBuffer>& cmd) const
 	{
-		VkSurface::BoundSurface()->GetCommandBuffer().endRenderPass();
+		const auto& vkCmd = std::static_pointer_cast<VkCommandBuffer>(cmd);
+
+		vkCmd->CurrentBuffer().endRenderPass();
 	}
 
 	void VkRenderPass::CreateAttachments(const vk::Format format, const vk::ImageLayout layout)
-	{
+	{//TODO: get formats from images
 		vk::AttachmentDescription& colorAttachment{ mAttachments.emplace_back() };
 		colorAttachment.samples = vk::SampleCountFlagBits::e1;
 		colorAttachment.loadOp = vk::AttachmentLoadOp::eClear;
@@ -114,6 +169,23 @@ namespace SnowEngine
 		vk::AttachmentReference& colorAttachmentRef{ mReferences.emplace_back() };
 		colorAttachmentRef.attachment = 0;
 		colorAttachmentRef.layout = vk::ImageLayout::eColorAttachmentOptimal;
+
+		if (!mHasDepth)
+			return;
+
+		vk::AttachmentDescription& depthAttachment{ mAttachments.emplace_back() };
+		depthAttachment.format = vk::Format::eD32Sfloat;
+		depthAttachment.samples = vk::SampleCountFlagBits::e1;
+		depthAttachment.loadOp = vk::AttachmentLoadOp::eClear;
+		depthAttachment.storeOp = vk::AttachmentStoreOp::eDontCare;
+		depthAttachment.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
+		depthAttachment.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
+		depthAttachment.initialLayout = vk::ImageLayout::eUndefined;
+		depthAttachment.finalLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
+
+		vk::AttachmentReference& depthAttachmentRef{ mReferences.emplace_back() };
+		depthAttachmentRef.attachment = 1;
+		depthAttachmentRef.layout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
 	}
 
 	void VkRenderPass::CreateSubpasses()
@@ -122,16 +194,21 @@ namespace SnowEngine
 		subpass.pipelineBindPoint = vk::PipelineBindPoint::eGraphics;
 		subpass.colorAttachmentCount = 1;
 		subpass.pColorAttachments = &mReferences[0];
+		subpass.pDepthStencilAttachment = mHasDepth ? &mReferences[1] : nullptr;
 	}
 
-	void VkRenderPass::CreateDependencies(const vk::PipelineStageFlags pipelineStage, const vk::AccessFlags access)
+	void VkRenderPass::CreateDependencies(const vk::PipelineStageFlagBits pipelineStage, const vk::AccessFlags access)
 	{
+		const auto srcStage{ mHasDepth ? pipelineStage | vk::PipelineStageFlagBits::eEarlyFragmentTests : pipelineStage };
+		const auto dstStage{ mHasDepth ? vk::PipelineStageFlagBits::eColorAttachmentOutput | vk::PipelineStageFlagBits::eEarlyFragmentTests : vk::PipelineStageFlagBits::eColorAttachmentOutput };
+		const auto dstMask{ mHasDepth ? vk::AccessFlagBits::eColorAttachmentWrite | vk::AccessFlagBits::eDepthStencilAttachmentWrite : vk::AccessFlagBits::eColorAttachmentWrite };
+
 		vk::SubpassDependency& dependency{ mDependencies.emplace_back() };
 		dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-		dependency.srcStageMask = pipelineStage;
+		dependency.srcStageMask = srcStage;
 		dependency.dstSubpass = 0;
-		dependency.dstStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput;
-		dependency.dstAccessMask = access;
+		dependency.dstStageMask = dstStage;
+		dependency.dstAccessMask = dstMask;
 	}
 
 	void VkRenderPass::CreateRenderPass()
@@ -147,12 +224,12 @@ namespace SnowEngine
 		mRenderPass = VkCore::Get()->Device().createRenderPass(createInfo);
 	}
 
-	void VkRenderPass::CreateFramebuffer(const vk::ImageView view, const u32 currentFrame)
+	void VkRenderPass::CreateFramebuffer(const std::vector<vk::ImageView>& views, const u32 currentFrame)
 	{
 		vk::FramebufferCreateInfo createInfo{};
 		createInfo.renderPass = mRenderPass;
-		createInfo.attachmentCount = 1;
-		createInfo.pAttachments = &view;
+		createInfo.attachmentCount = static_cast<u32>(views.size());
+		createInfo.pAttachments = views.data();
 		createInfo.width = mWidth;
 		createInfo.height = mHeight;
 		createInfo.layers = 1;
@@ -162,6 +239,23 @@ namespace SnowEngine
 
 	void VkRenderPass::CreateImage(const u32 currentFrame)
 	{
-		mImages[currentFrame] = std::make_unique<VkImage>(mWidth, mHeight, vk::Format::eB8G8R8A8Srgb, vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eColorAttachment, vk::ImageLayout::eShaderReadOnlyOptimal);
+		mImages[currentFrame] = std::make_unique<VkImage>(
+			mWidth, 
+			mHeight, 
+			vk::Format::eB8G8R8A8Srgb, 
+			vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eColorAttachment, 
+			vk::ImageLayout::eShaderReadOnlyOptimal,
+			vk::ImageAspectFlagBits::eColor);
+	}
+
+	void VkRenderPass::CreateDepthImage(const u32 currentFrame)
+	{
+		mDepthImages[currentFrame] = std::make_unique<VkImage>(
+			mWidth,
+			mHeight,
+			vk::Format::eD32Sfloat,
+			vk::ImageUsageFlagBits::eDepthStencilAttachment,
+			vk::ImageLayout::eDepthStencilAttachmentOptimal,
+			vk::ImageAspectFlagBits::eDepth);
 	}
 }

@@ -14,13 +14,13 @@ namespace SnowEngine
 		VkGui(std::shared_ptr<const VkSurface> surface, std::shared_ptr<VkRenderPass> scene);
 		~VkGui() override;
 
-		void Begin() override;
-		void End() override;
+		void Begin(const std::shared_ptr<CommandBuffer>& cmd) override;
+		void End(const std::shared_ptr<CommandBuffer>& cmd) override;
 
 	private:
 		void CreateDescriptorPool();
 		void CreateSampler();
-		void InitImGui();
+		void InitImGui() const;
 		void CreateSceneImage(const VkImage& image, u32 frameIndex);
 
 		vk::DescriptorPool mDescriptorPool;

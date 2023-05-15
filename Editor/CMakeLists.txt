@@ -1,5 +1,5 @@
 ﻿add_executable (Editor "Source/Editor.h" 
-					   "Source/Editor.cpp")
+					   "Source/Editor.cpp" "Source/ParticleTest.cpp")
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(TARGET Editor PROPERTY CXX_STANDARD 20)

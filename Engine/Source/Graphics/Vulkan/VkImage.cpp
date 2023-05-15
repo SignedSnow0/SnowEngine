@@ -17,14 +17,14 @@ namespace SnowEngine
 	VkImage::VkImage(const std::filesystem::path& source)
 	{
 		CreateImage(source);
-		CreateView();
+		CreateView(vk::ImageAspectFlagBits::eColor);
 	}
 
-	VkImage::VkImage(const u32 width, const u32 height, const vk::Format format, const vk::ImageUsageFlags usage, const vk::ImageLayout layout)
+	VkImage::VkImage(const u32 width, const u32 height, const vk::Format format, const vk::ImageUsageFlags usage, const vk::ImageLayout layout, const vk::ImageAspectFlags aspect)
 		: mFormat{ format }
 	{
 		CreateImage(width, height, usage, layout);
-		CreateView();
+		CreateView(aspect);
 	}
 
 	VkImage::~VkImage()
@@ -32,9 +32,9 @@ namespace SnowEngine
 		vmaDestroyImage(VkCore::Get()->Allocator(), mImage, mAllocation);
 	}
 
-	vk::ImageLayout VkImage::GetLayout() const { return mLayout; }
+	vk::ImageLayout VkImage::Layout() const { return mLayout; }
 
-	vk::ImageView VkImage::GetView() const { return mView; }
+	vk::ImageView VkImage::View() const { return mView; }
 
 	void VkImage::CreateImage(const u32 width, const u32 height, const vk::ImageUsageFlags usage, const vk::ImageLayout layout)
 	{
@@ -84,19 +84,19 @@ namespace SnowEngine
 			region.imageOffset = vk::Offset3D{ 0, 0, 0 };
 			region.imageExtent = vk::Extent3D{ width, height, 1 };
 
-			cmd.copyBufferToImage(staging.GetBuffer(), mImage, vk::ImageLayout::eTransferDstOptimal, region);
+			cmd.copyBufferToImage(staging.Buffer(), mImage, vk::ImageLayout::eTransferDstOptimal, region);
 		});
 
 		ChangeLayout(vk::ImageLayout::eShaderReadOnlyOptimal);
 	}
 
-	void VkImage::CreateView()
+	void VkImage::CreateView(const vk::ImageAspectFlags aspect)
 	{
 		vk::ImageViewCreateInfo createInfo{};
 		createInfo.image = mImage;
 		createInfo.viewType = vk::ImageViewType::e2D;
 		createInfo.format = mFormat;
-		createInfo.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
+		createInfo.subresourceRange.aspectMask = aspect;
 		createInfo.subresourceRange.baseMipLevel = 0;
 		createInfo.subresourceRange.levelCount = 1;
 		createInfo.subresourceRange.baseArrayLayer = 0;

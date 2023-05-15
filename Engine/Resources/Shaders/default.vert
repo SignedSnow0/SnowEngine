@@ -19,7 +19,7 @@ layout (set = 1, binding = 0) uniform Transform
 } transform;
 
 void main() {
-    gl_Position = camera.Projection * camera.View * transform.Transform * vec4(position.xy, 0.0, 1.0);
+    gl_Position = camera.Projection * camera.View * transform.Transform * vec4(position, 1.0);
     fragColor = color;
     uv = inUV;
 }

@@ -2,6 +2,7 @@
 
 #include "VkCore.h"
 #include "VkSurface.h"
+#include "VkCommandBuffer.h"
 
 namespace SnowEngine
 {
@@ -24,9 +25,9 @@ namespace SnowEngine
 		vmaDestroyBuffer(VkCore::Get()->Allocator(), mBuffer, mAllocation);
 	}
 
-	vk::Buffer VkBuffer::GetBuffer() const { return mBuffer; }
+	vk::Buffer VkBuffer::Buffer() const { return mBuffer; }
 
-	u32 VkBuffer::GetSize() const { return mSize; }
+	u32 VkBuffer::Size() const { return mSize; }
 
 	void VkBuffer::InsertData(const void* data, const u32 size, const u32 offset) const
 	{
@@ -56,17 +57,21 @@ namespace SnowEngine
 		const VkBuffer staging(vertexCount * sizeof(Vertex), vk::BufferUsageFlagBits::eTransferSrc, VMA_MEMORY_USAGE_CPU_ONLY);
 		staging.InsertData(vertices);
 
-		CopyBuffer(staging.GetBuffer(), mBuffer, mSize);
+		CopyBuffer(staging.Buffer(), mBuffer, mSize);
 	}
 
-	void VkVertexBuffer::Bind() const
+	void VkVertexBuffer::Bind(const std::shared_ptr<CommandBuffer>& cmd) const
 	{
-		VkSurface::BoundSurface()->GetCommandBuffer().bindVertexBuffers(0, mBuffer, { 0 });
+		const auto& vkCmd = std::static_pointer_cast<VkCommandBuffer>(cmd);
+
+		vkCmd->CurrentBuffer().bindVertexBuffers(0, mBuffer, { 0 });
 	}
 
-	void VkVertexBuffer::Draw() const
+	void VkVertexBuffer::Draw(const std::shared_ptr<CommandBuffer>& cmd) const
 	{
-		VkSurface::BoundSurface()->GetCommandBuffer().draw(mCount, 1, 0, 0);
+		const auto& vkCmd = std::static_pointer_cast<VkCommandBuffer>(cmd);
+
+		vkCmd->CurrentBuffer().draw(mCount, 1, 0, 0);
 	}
 
 	vk::VertexInputBindingDescription VkVertexBuffer::BindingDescription()
@@ -109,39 +114,63 @@ namespace SnowEngine
 		const VkBuffer staging(indexCount * sizeof(u32), vk::BufferUsageFlagBits::eTransferSrc, VMA_MEMORY_USAGE_CPU_ONLY);
 		staging.InsertData(indices);
 
-		CopyBuffer(staging.GetBuffer(), mBuffer, mSize);
+		CopyBuffer(staging.Buffer(), mBuffer, mSize);
 	}
 
-	void VkIndexBuffer::Bind() const
+	void VkIndexBuffer::Bind(const std::shared_ptr<CommandBuffer>& cmd) const
 	{
-		VkSurface::BoundSurface()->GetCommandBuffer().bindIndexBuffer(mBuffer, 0, vk::IndexType::eUint32);
+		const auto& vkCmd = std::static_pointer_cast<VkCommandBuffer>(cmd);
+
+		vkCmd->CurrentBuffer().bindIndexBuffer(mBuffer, 0, vk::IndexType::eUint32);
 	}
 
-	void VkIndexBuffer::Draw() const
+	void VkIndexBuffer::Draw(const std::shared_ptr<CommandBuffer>& cmd) const
 	{
-		VkSurface::BoundSurface()->GetCommandBuffer().drawIndexed(mCount, 1, 0, 0, 0);
+		const auto& vkCmd = std::static_pointer_cast<VkCommandBuffer>(cmd);
+
+		vkCmd->CurrentBuffer().drawIndexed(mCount, 1, 0, 0, 0);
 	}
 
 	VkUniformBuffer::VkUniformBuffer(const u32 size, const u32 frameCount)
 	{
-		mBuffers.resize(frameCount);
-
-		for (auto& buffer : mBuffers)
-		{//TODO: sus
-			buffer = new VkBuffer(size, vk::BufferUsageFlagBits::eUniformBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU);
-		}
+		for (u32 i{ 0 }; i < frameCount; i++)
+			mBuffers.push_back(std::make_unique<VkBuffer>(size, vk::BufferUsageFlagBits::eUniformBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU));
 	}
 
-	VkUniformBuffer::~VkUniformBuffer()
-	{
-		for (const auto* buffer : mBuffers)
-			delete buffer;
-	}
-
-	const std::vector<VkBuffer*>& VkUniformBuffer::GetBuffers() const { return mBuffers; }
+	const std::vector<std::unique_ptr<VkBuffer>>& VkUniformBuffer::Buffers() const { return mBuffers; }
 
 	void VkUniformBuffer::InsertData(const void* data, const u32 frameIndex) const
 	{
 		mBuffers.at(frameIndex)->InsertData(data);
+	}
+
+	VkStorageBuffer::VkStorageBuffer(const u32 size)
+		: mSize{ size }
+	{
+		mBuffers = std::make_unique<VkBuffer>(
+			mSize,
+			vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eStorageBuffer,
+			VMA_MEMORY_USAGE_GPU_ONLY);
+	}
+
+	u32 VkStorageBuffer::Size() const { return mSize; }
+
+	const std::unique_ptr<VkBuffer>& VkStorageBuffer::Buffers() const {	return mBuffers; }
+
+	void VkStorageBuffer::SetData(const std::shared_ptr<StorageBuffer>& other) const
+	{
+		const auto& buffers = std::static_pointer_cast<VkStorageBuffer>(other)->Buffers();
+
+		const vk::DeviceSize deviceSize{ mSize };
+		VkBuffer::CopyBuffer(buffers->Buffer(), mBuffers->Buffer(), deviceSize);
+	}
+
+	void VkStorageBuffer::SetData(const void* data) const
+	{
+		const VkBuffer staging{ mSize, vk::BufferUsageFlagBits::eTransferSrc, VMA_MEMORY_USAGE_CPU_TO_GPU };
+		staging.InsertData(data);
+
+		const vk::DeviceSize deviceSize{ staging.Size() };
+		VkBuffer::CopyBuffer(staging.Buffer(), mBuffers->Buffer(), deviceSize);
 	}
 }

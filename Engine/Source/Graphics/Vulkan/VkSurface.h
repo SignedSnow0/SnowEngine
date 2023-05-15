@@ -11,16 +11,19 @@ namespace SnowEngine
 	public:
 		VkSurface(std::shared_ptr<const Window> window);
 
-		vk::Format GetFormat() const;
-		std::vector<vk::ImageView> GetViews() const;
-		u32 GetWidth() const;
-		u32 GetHeight() const;
+		u32 ImageCount() const override;
+		u32 CurrentFrame() const override;
+
+		u32 Width() const;
+		u32 Height() const;
+		vk::Format Format() const;
+		std::vector<vk::ImageView> Views() const;
 		std::shared_ptr<const Window> GetWindow() const;
-		vk::CommandBuffer GetCommandBuffer() const;
-		u32 GetCurrentFrame() const override;
-		
+		vk::Semaphore ImageAvailableSemaphore() const;
+
 		void Begin() override;
-		void End() override;
+		void End(const std::shared_ptr<const CommandBuffer>& commandBuffer) override;
+
 		void SubmitPostFrameQueue(const std::function<void(u32 frameIndex)>& func);
 
 		static VkSurface* BoundSurface();
@@ -29,7 +32,6 @@ namespace SnowEngine
 		void CreateSurface();
 		void CreateSurfaceSettings();
 		void CreateSwapchain();
-		void CreateCommandPool();
 		void CreateFrameData();
 		void CreateSyncObjects();
 		void FlushPostSubmitQueue();
@@ -39,10 +41,7 @@ namespace SnowEngine
 		{
 			vk::Image Image;
 			vk::ImageView ImageView;
-			vk::CommandBuffer CommandBuffer;
 			vk::Semaphore ImageAvailable;
-			vk::Semaphore RenderFinished;
-			vk::Fence InFlight;
 		};
 
 		std::vector<FrameData> mFrames;
@@ -53,7 +52,6 @@ namespace SnowEngine
 		u32 mImageCount;
 		u32 mCurrentPresentFrame{ 0 };
 		u32 mCurrentCpuFrame;
-		vk::CommandPool mCommandPool;
 		vk::SwapchainKHR mSwapchain;
 		std::shared_ptr<const Window> mWindow;
 		std::vector<std::pair<u32, std::function<void(u32 frameIndex)>>> mPostSubmitQueue;
