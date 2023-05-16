@@ -18,10 +18,7 @@ namespace SnowEngine
 
 		vk::RenderPass RenderPass() const;
 		const std::vector<std::unique_ptr<VkImage>>& Images() const;
-<<<<<<< HEAD
 		b8 HasDepth() const;
-=======
->>>>>>> 82bf1ed14055334cdce1014d7850da732bbad42a
 
 		void Begin(const std::shared_ptr<CommandBuffer>& cmd) override;
 		void End(const std::shared_ptr<CommandBuffer>& cmd) const override;

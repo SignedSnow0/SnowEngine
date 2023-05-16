@@ -125,7 +125,6 @@ namespace SnowEngine
 		colorBlendInfo.blendConstants[2] = 0.0f;
 		colorBlendInfo.blendConstants[3] = 0.0f;
 
-<<<<<<< HEAD
 		vk::PipelineDepthStencilStateCreateInfo depthStencilInfo;
 		depthStencilInfo.depthTestEnable = true;
 		depthStencilInfo.depthWriteEnable = true;
@@ -133,8 +132,6 @@ namespace SnowEngine
 		depthStencilInfo.depthBoundsTestEnable = false;
 		depthStencilInfo.stencilTestEnable = false;
 		
-=======
->>>>>>> 82bf1ed14055334cdce1014d7850da732bbad42a
 		const auto shaderStages = mShader->ShaderStageInfos();
 
 		vk::GraphicsPipelineCreateInfo createInfo;
