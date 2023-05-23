@@ -6,16 +6,6 @@
 
 #include "VkCore.h"
 
-#ifdef _DEBUG
-#pragma comment(lib, "shaderc_combinedd.lib")
-#pragma comment(lib, "spirv-cross-cored.lib")
-#pragma comment(lib, "spirv-cross-glsld.lib")
-#else
-#pragma comment(lib, "shaderc_combined.lib")
-#pragma comment(lib, "spirv-cross-core.lib")
-#pragma comment(lib, "spirv-cross-glsl.lib")
-#endif
-
 namespace SnowEngine
 {
 	static std::string ReadFile(const std::filesystem::path& path)

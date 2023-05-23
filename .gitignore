@@ -1,3 +1,13 @@
 .vs/
 bin/
 *.user
+
+*.sln
+
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+
+*.vcsproj
+*.vcsproj.filters
+*.vcsproj.user

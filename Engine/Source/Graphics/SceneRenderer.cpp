@@ -15,9 +15,9 @@ namespace SnowEngine
 		mRenderPass = RenderPass::Create(surface->ImageCount(), 1920, 1080, true);
 		mShader = Shader::Create(
 		{
-					{ "D:/Dev/SnowEngine/Engine/Resources/Shaders/default.vert", ShaderType::Vertex },
-					{ "D:/Dev/SnowEngine/Engine/Resources/Shaders/default.frag", ShaderType::Fragment },
-					{}
+			{ "D:/Dev/SnowEngine/Engine/Resources/Shaders/default.vert", ShaderType::Vertex },
+			{ "D:/Dev/SnowEngine/Engine/Resources/Shaders/default.frag", ShaderType::Fragment },
+			{}
 		});
 		mPipeline = Pipeline::Create(mShader, mRenderPass, 2560, 1440);
 		mCmdBuffer = CommandBuffer::Create(surface->ImageCount(), CommandBufferUsage::Graphics);
@@ -29,15 +29,15 @@ namespace SnowEngine
 		mEntityDescriptorSet->SetImage("albedo", mImage.get());//TODO: descriptor set should take image when using it
 
 		const std::vector<SnowEngine::Vertex> vertices = {
-				{ { -0.5f, -0.5f,  0.0f }, { 1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f } },
-				{ {  0.5f, -0.5f,  0.0f }, { 0.0f, 1.0f, 0.0f }, { 1.0f, 0.0f } },
-				{ {  0.5f,  0.5f,  0.0f }, { 0.0f, 0.0f, 1.0f }, { 1.0f, 1.0f } },
-				{ { -0.5f,  0.5f,  0.0f }, { 1.0f, 1.0f, 1.0f }, { 0.0f, 1.0f } },
+			{ { -0.5f, -0.5f,  0.0f }, { 1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f } },
+			{ {  0.5f, -0.5f,  0.0f }, { 0.0f, 1.0f, 0.0f }, { 1.0f, 0.0f } },
+			{ {  0.5f,  0.5f,  0.0f }, { 0.0f, 0.0f, 1.0f }, { 1.0f, 1.0f } },
+			{ { -0.5f,  0.5f,  0.0f }, { 1.0f, 1.0f, 1.0f }, { 0.0f, 1.0f } },
 
-				{ { -0.5f, -0.5f, -0.5f }, { 1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f } },
-				{ {  0.5f, -0.5f, -0.5f }, { 0.0f, 1.0f, 0.0f }, { 1.0f, 0.0f } },
-				{ {  0.5f,  0.5f, -0.5f }, { 0.0f, 0.0f, 1.0f }, { 1.0f, 1.0f } },
-				{ { -0.5f,  0.5f, -0.5f }, { 1.0f, 1.0f, 1.0f }, { 0.0f, 1.0f } }
+			{ { -0.5f, -0.5f, -0.5f }, { 1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f } },
+			{ {  0.5f, -0.5f, -0.5f }, { 0.0f, 1.0f, 0.0f }, { 1.0f, 0.0f } },
+			{ {  0.5f,  0.5f, -0.5f }, { 0.0f, 0.0f, 1.0f }, { 1.0f, 1.0f } },
+			{ { -0.5f,  0.5f, -0.5f }, { 1.0f, 1.0f, 1.0f }, { 0.0f, 1.0f } }
 		};
 
 		const std::vector<u32> indices = {
