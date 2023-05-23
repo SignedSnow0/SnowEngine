@@ -61,7 +61,7 @@ namespace SnowEngine
 		submitInfo.pWaitSemaphores = wait.data();
 		submitInfo.pWaitDstStageMask = stages.data();
 
-		VkCore::Get()->Queues().Compute.second.submit(submitInfo, mFrames[currentFrame].InFlight);
+		mQueue.second.submit(submitInfo, mFrames[currentFrame].InFlight);
 	}
 
 	void VkCommandBuffer::Submit(u32 currentFrame, const std::shared_ptr<const Surface>& surface) const
@@ -87,7 +87,7 @@ namespace SnowEngine
 		submitInfo.pWaitSemaphores = wait.data();
 		submitInfo.pWaitDstStageMask = stages.data();
 
-		VkCore::Get()->Queues().Compute.second.submit(submitInfo, mFrames[currentFrame].InFlight);
+		mQueue.second.submit(submitInfo, mFrames[currentFrame].InFlight);
 	}
 
 	void VkCommandBuffer::GetQueue()

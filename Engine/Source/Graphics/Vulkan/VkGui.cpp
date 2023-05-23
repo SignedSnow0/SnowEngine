@@ -118,7 +118,7 @@ namespace SnowEngine
 		ImGuiIO& io{ ImGui::GetIO() };
 		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
-		const auto font = io.Fonts->AddFontFromFileTTF("C:/Dev/SnowEngine/Engine/Resources/Fonts/Lilex/LilexNerdFont-Regular.ttf", 15);
+		const auto font = io.Fonts->AddFontFromFileTTF("D:/Dev/SnowEngine/Engine/Resources/Fonts/Lilex/LilexNerdFont-Regular.ttf", 15);
 		io.FontDefault = font;
 
 		ImGui_ImplGlfw_InitForVulkan(mSurface->GetWindow()->Handle(), true);

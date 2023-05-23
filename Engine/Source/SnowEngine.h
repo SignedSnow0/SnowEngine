@@ -1,6 +1,10 @@
 ﻿#pragma once
+#include "Core/Components.h"
+#include "Core/Entity.h"
+#include "Core/Scene.h"
 #include "Core/Window.h"
 
+#include "Graphics/SceneRenderer.h"
 #include "Graphics/Rhi/Buffers.h"
 #include "Graphics/Rhi/Core.h"
 #include "Graphics/Rhi/DescriptorSet.h"

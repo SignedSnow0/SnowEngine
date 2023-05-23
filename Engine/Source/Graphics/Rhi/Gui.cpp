@@ -120,6 +120,6 @@ namespace SnowEngine
 		style.WindowRounding = 4.0f;
 
 		ImGuiIO& io{ ImGui::GetIO() };
-		io.FontGlobalScale = 1.5f;
+		//io.FontGlobalScale = 1.5f;
 	}
 }

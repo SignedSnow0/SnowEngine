@@ -1,9 +1,17 @@
 ﻿add_library(Engine STATIC "Source/SnowEngine.h"
-						  
+					      
+						  "Source/Core/Components.cpp"	  
+						  "Source/Core/Components.h"
+						  "Source/Core/Entity.cpp"
+						  "Source/Core/Entity.h" 
+						  "Source/Core/Scene.cpp" 
+						  "Source/Core/Scene.h" 
 						  "Source/Core/Types.h"
 						  "Source/Core/Window.cpp"
 						  "Source/Core/Window.h"
 
+						  "Source/Graphics/SceneRenderer.cpp"
+						  "Source/Graphics/SceneRenderer.h"
 						  "Source/Graphics/Rhi/Buffers.cpp"
 						  "Source/Graphics/Rhi/Buffers.h"
 						  "Source/Graphics/Rhi/CommandBuffer.cpp"
@@ -59,6 +67,7 @@ set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 add_subdirectory("External/glfw/")
 add_subdirectory("External/glm/")
 add_subdirectory("External/imgui")
+add_subdirectory("External/entt")
 
 find_package(Vulkan REQUIRED FATAL_ERROR)
 
@@ -72,5 +81,6 @@ target_include_directories(Engine PUBLIC "External/glfw/include/"
 								  PUBLIC "External/glm/"
 								  PUBLIC "External/stb/"
 								  PUBLIC "External/imgui/"
+								  PUBLIC "External/entt/src/"
 								  PUBLIC "$ENV{VULKAN_SDK}/Include/"
 								  PRIVATE "Source/")
