@@ -26,17 +26,17 @@ namespace SnowEngine
 		}
 	}
 
-	void VkDescriptorSet::SetImage(const std::string& name, const Image* image) const
+	void VkDescriptorSet::SetImage(const std::string& name, const std::shared_ptr<Image>& image)
 	{
-		const auto vkImage{ reinterpret_cast<const VkImage*>(image) };
-		for (const auto& [binding, resource]:mLayout.Resources)
+		const auto vkImage{ reinterpret_cast<const VkImage*>(image.get()) };
+		for (const auto& [binding, resource] : mLayout.Resources)
 		{
 			if (resource.Name == name && resource.Type == VkResourceType::Image)
 			{
 				vk::DescriptorImageInfo imageInfo{};
 				imageInfo.imageLayout = vkImage->Layout();
 				imageInfo.imageView = vkImage->View();
-				imageInfo.sampler = mImages.at(binding);
+				imageInfo.sampler = mImages.at(binding).second;
 
 				for (const auto set : mSets)
 				{
@@ -50,6 +50,8 @@ namespace SnowEngine
 
 					VkCore::Get()->Device().updateDescriptorSets(write, nullptr);
 				}
+
+				mImages.at(binding).first = image;
 			}
 		}
 	}
@@ -175,7 +177,7 @@ namespace SnowEngine
 				createInfo.maxLod = 1.0f;
 				createInfo.borderColor = vk::BorderColor::eIntOpaqueBlack;
 
-				mImages.insert({ binding, VkCore::Get()->Device().createSampler(createInfo) });
+				mImages.insert({ binding, { nullptr, VkCore::Get()->Device().createSampler(createInfo) } });
 			}
 
 			if (resource.Type == VkResourceType::StorageBuffer)

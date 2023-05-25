@@ -48,11 +48,11 @@ ParticleTest::ParticleTest()
 		{ "D:/Dev/SnowEngine/Engine/Resources/Shaders/default.vert", SnowEngine::ShaderType::Vertex },
 		{ "D:/Dev/SnowEngine/Engine/Resources/Shaders/default.frag", SnowEngine::ShaderType::Fragment },
 		{}
-	});
+	}, "default");
 	mComputeShader = SnowEngine::Shader::Create(SnowEngine::ComputeShaderSource
 	{
 		{ "D:/Dev/SnowEngine/Engine/Resources/Shaders/particle.comp", SnowEngine::ShaderType::Compute }
-	});
+	}, "particle");
 	mPipeline = SnowEngine::Pipeline::Create(mShader, mRenderPass, 1920, 1080);
 	mComputePipeline = SnowEngine::ComputePipeline::Create(mComputeShader);
 

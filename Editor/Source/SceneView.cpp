@@ -15,14 +15,15 @@ namespace SnowEditor
 			if(ImGui::Button("Create Entity"))
 			{
 				SnowEngine::Entity e = mScene->CreateEntity();
-				e.AddComponent<SnowEngine::Tag>("New entity");
-				e.AddComponent<SnowEngine::Transform>();
+				e.AddComponent<SnowEngine::Component::Tag>("New entity");
+				e.AddComponent<SnowEngine::Component::Transform>();
+				e.AddComponent<SnowEngine::Component::Mesh>();//TODO: tmp
 			}
 
 			u32 id{ 0 };
 			mScene->ExecuteSystem([&](const SnowEngine::Entity& e)
 			{
-				const auto tag = e.GetComponents<SnowEngine::Tag>();
+				const auto tag = e.GetComponents<SnowEngine::Component::Tag>();
 				const std::string label = tag.Name + "##" + std::to_string(id);
 				if (ImGui::Selectable(label.c_str()))
 				{

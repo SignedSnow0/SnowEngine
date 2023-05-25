@@ -17,7 +17,7 @@ namespace SnowEngine
 		set SetIndex() const;
 
 		void SetUniform(const std::string& name, const void* data, u32 currentFrame) const override;
-		void SetImage(const std::string& name, const Image* image) const override;
+		void SetImage(const std::string& name, const std::shared_ptr<Image>& image) override;
 		void SetStorageBuffer(const std::string& name, const std::shared_ptr<StorageBuffer>& buffer) override;
 
 	private:
@@ -29,7 +29,7 @@ namespace SnowEngine
 		std::vector<vk::DescriptorSet> mSets;
 		std::map<binding, std::unique_ptr<VkUniformBuffer>> mUniforms;
 		std::map<binding, std::shared_ptr<VkStorageBuffer>> mStorageBuffers;
-		std::map<binding, vk::Sampler> mImages;
+		std::map<binding, std::pair<std::shared_ptr<Image>, vk::Sampler>> mImages;
 		const VkDescriptorSetLayout& mLayout;
 		u32 mFrameCount;
 	};

@@ -18,35 +18,11 @@ namespace SnowEngine
 			{ "D:/Dev/SnowEngine/Engine/Resources/Shaders/default.vert", ShaderType::Vertex },
 			{ "D:/Dev/SnowEngine/Engine/Resources/Shaders/default.frag", ShaderType::Fragment },
 			{}
-		});
+		}, "default");
 		mPipeline = Pipeline::Create(mShader, mRenderPass, 2560, 1440);
 		mCmdBuffer = CommandBuffer::Create(surface->ImageCount(), CommandBufferUsage::Graphics);
 
 		mGlobalDescriptorSet = DescriptorSet::Create(mShader, 0, 2);
-		mEntityDescriptorSet = DescriptorSet::Create(mShader, 1, 2);
-
-		mImage = Image::Create("D:/Dev/SnowEngine/Engine/Resources/Images/sus.png");
-		mEntityDescriptorSet->SetImage("albedo", mImage.get());//TODO: descriptor set should take image when using it
-
-		const std::vector<SnowEngine::Vertex> vertices = {
-			{ { -0.5f, -0.5f,  0.0f }, { 1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f } },
-			{ {  0.5f, -0.5f,  0.0f }, { 0.0f, 1.0f, 0.0f }, { 1.0f, 0.0f } },
-			{ {  0.5f,  0.5f,  0.0f }, { 0.0f, 0.0f, 1.0f }, { 1.0f, 1.0f } },
-			{ { -0.5f,  0.5f,  0.0f }, { 1.0f, 1.0f, 1.0f }, { 0.0f, 1.0f } },
-
-			{ { -0.5f, -0.5f, -0.5f }, { 1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f } },
-			{ {  0.5f, -0.5f, -0.5f }, { 0.0f, 1.0f, 0.0f }, { 1.0f, 0.0f } },
-			{ {  0.5f,  0.5f, -0.5f }, { 0.0f, 0.0f, 1.0f }, { 1.0f, 1.0f } },
-			{ { -0.5f,  0.5f, -0.5f }, { 1.0f, 1.0f, 1.0f }, { 0.0f, 1.0f } }
-		};
-
-		const std::vector<u32> indices = {
-			0, 1, 2, 2, 3, 0,
-			4, 5, 6, 6, 7, 4
-		};
-
-		mVertexBuffer = VertexBuffer::Create(vertices.data(), vertices.size());
-		mIndexBuffer = IndexBuffer::Create(indices.data(), indices.size());
 	}
 
 	const std::shared_ptr<RenderPass>& SceneRenderer::GetRenderPass() const { return mRenderPass; }
@@ -55,7 +31,7 @@ namespace SnowEngine
 
 	void SceneRenderer::SetScene(const std::shared_ptr<Scene>& scene) { mScene = scene;	}
 
-	void SceneRenderer::Draw(const std::shared_ptr<Surface>& surface)
+	void SceneRenderer::Draw(const std::shared_ptr<Surface>& surface) const
 	{
 		struct Camera
 		{
@@ -79,16 +55,13 @@ namespace SnowEngine
 
 		mScene->ExecuteSystem([&](const Entity& e)
 		{
-			if (e.HasComponents<Transform>())
+			if (e.HasComponents<Component::Transform, Component::Mesh>())
 			{
-				const auto transform = e.GetComponents<Transform>().Model();
+				const auto [transform, mesh] = e.GetComponents<Component::Transform, Component::Mesh>();
 
-				mEntityDescriptorSet->SetUniform("Transform", &transform, surface->CurrentFrame());
-				mPipeline->BindDescriptorSet(mEntityDescriptorSet.get(), surface->CurrentFrame(), mCmdBuffer);
+				mesh.Model->SetTransform(transform.Model(), surface->CurrentFrame());
 
-				mVertexBuffer->Bind(mCmdBuffer);
-				mIndexBuffer->Bind(mCmdBuffer);
-				mIndexBuffer->Draw(mCmdBuffer);
+				mesh.Model->Draw(mPipeline, mCmdBuffer, surface->CurrentFrame());
 			}
 		});
 

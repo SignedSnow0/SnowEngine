@@ -3,13 +3,27 @@
 
 namespace SnowEngine
 {
-	std::shared_ptr<Shader> Shader::Create(const GraphicShaderSource& source)
+	std::map<std::string, std::shared_ptr<Shader>> Shader::sShaders;
+
+	std::shared_ptr<Shader> Shader::Create(const GraphicShaderSource& source, const std::string& name)
 	{
-		return std::make_shared<VkShader>(source);
+		sShaders[name] = std::make_shared<VkShader>(source);
+		return sShaders[name];
 	}
 
-	std::shared_ptr<Shader> Shader::Create(const ComputeShaderSource& source)
+	std::shared_ptr<Shader> Shader::Create(const ComputeShaderSource& source, const std::string& name)
 	{
-		return std::make_shared<VkShader>(source);
+		sShaders[name] = std::make_shared<VkShader>(source);
+		return sShaders[name];
+	}
+
+	b8 Shader::GetShader(const std::string& name, std::shared_ptr<Shader>& shader)
+	{
+		if (sShaders.contains(name))
+		{
+			shader = sShaders[name];
+			return true;
+		}
+		return false;
 	}
 }
