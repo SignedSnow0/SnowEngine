@@ -22,7 +22,7 @@ namespace SnowEditor
 		std::shared_ptr<SnowEngine::SceneRenderer> mSceneRenderer{ nullptr };
 		std::shared_ptr<SnowEngine::Gui> mGui{ nullptr };
 
-		SceneView mSceneView;
-		EntityView mEntityView;
+		SceneView* mSceneView;
+		EntityView* mEntityView;
 	};
 }

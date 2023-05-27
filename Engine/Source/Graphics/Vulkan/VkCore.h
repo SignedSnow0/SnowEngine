@@ -29,6 +29,7 @@ namespace SnowEngine
 		VkQueues Queues() const;
 		VmaAllocator Allocator() const;
 
+		void DeviceWaitIdle() const override;
 		void SubmitInstantCommand(std::function<void(vk::CommandBuffer cmd)>&& command) const;
 
 		static const VkCore* Get();

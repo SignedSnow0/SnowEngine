@@ -1,4 +1,6 @@
 #include "Scene.h"
+
+#include "Components.h"
 #include "Entity.h"
 
 namespace SnowEngine

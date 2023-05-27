@@ -12,6 +12,7 @@ namespace SnowEngine
 	{
 	public:
 		VkImage(const std::filesystem::path& source);
+		VkImage(const std::array<std::filesystem::path, 6>& sources);
 		VkImage(u32 width, u32 height, vk::Format format, vk::ImageUsageFlags usage, vk::ImageLayout layout, vk::ImageAspectFlags aspect);
 		~VkImage() override;
 
@@ -19,10 +20,10 @@ namespace SnowEngine
 		vk::ImageView View() const;
 
 	private:
-		void CreateImage(u32 width, u32 height, vk::ImageUsageFlags usage, vk::ImageLayout layout);
-		void CreateImage(const std::filesystem::path& source);
-		void CreateView(vk::ImageAspectFlags aspect);
-		void ChangeLayout(vk::ImageLayout newLayout);
+		void CreateImage(u32 width, u32 height, vk::ImageUsageFlags usage, vk::ImageLayout layout, u32 arrayLayers = 1);
+		void CreateImage(const std::vector<std::filesystem::path>& sources);
+		void CreateView(vk::ImageAspectFlags aspect, u32 arrayLayers = 1);
+		void ChangeLayout(vk::ImageLayout newLayout, u32 arrayLayers);
 
 		vk::ImageLayout mLayout{ vk::ImageLayout::eUndefined };
 		vk::Format mFormat;

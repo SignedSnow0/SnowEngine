@@ -53,7 +53,7 @@ ParticleTest::ParticleTest()
 	{
 		{ "D:/Dev/SnowEngine/Engine/Resources/Shaders/particle.comp", SnowEngine::ShaderType::Compute }
 	}, "particle");
-	mPipeline = SnowEngine::Pipeline::Create(mShader, mRenderPass, 1920, 1080);
+	mPipeline = SnowEngine::Pipeline::Create({ mShader, mRenderPass, 1920, 1080 });
 	mComputePipeline = SnowEngine::ComputePipeline::Create(mComputeShader);
 
 	mRenderCmd = SnowEngine::CommandBuffer::Create(mSurface->ImageCount(), SnowEngine::CommandBufferUsage::Graphics);

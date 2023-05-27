@@ -23,4 +23,9 @@ namespace SnowEngine
 			sInstance = nullptr;
 		}
 	}
+
+	void GraphicsCore::WaitIdle()
+	{
+		sInstance->DeviceWaitIdle();
+	}
 }

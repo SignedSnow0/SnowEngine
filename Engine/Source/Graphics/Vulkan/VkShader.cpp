@@ -158,7 +158,7 @@ namespace SnowEngine
 			if (!mDescriptorSetLayouts.at(set).Resources.contains(binding))
 				mDescriptorSetLayouts.at(set).Resources.insert({ binding, res });
 		}
-
+		
 		for (const auto& resource : resources.sampled_images)
 		{
 			const binding binding{ compiler.get_decoration(resource.id, spv::Decoration::DecorationBinding) };

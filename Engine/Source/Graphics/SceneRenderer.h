@@ -27,6 +27,13 @@ namespace SnowEngine
 		std::shared_ptr<DescriptorSet> mGlobalDescriptorSet{ nullptr };
 		std::shared_ptr<CommandBuffer> mCmdBuffer{ nullptr };
 
+		std::shared_ptr<Shader> mSkyboxShader{ nullptr };
+		std::shared_ptr<Pipeline> mSkyboxPipeline{ nullptr };
+		std::shared_ptr<Image> mSkyboxImage{ nullptr };
+		std::shared_ptr<DescriptorSet> mSkyboxDescriptorSet{ nullptr };
+		std::shared_ptr<VertexBuffer> mSkyboxVertexBuffer{ nullptr };
+		std::shared_ptr<IndexBuffer> mSkyboxIndexBuffer{ nullptr };
+
 		std::shared_ptr<Scene> mScene;
 	};
 }

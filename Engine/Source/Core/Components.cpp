@@ -4,7 +4,7 @@
 
 namespace SnowEngine::Component
 {
-	glm::mat4 Transform::Model()
+	glm::mat4 Transform::Model() const
 	{
 		return glm::translate(glm::mat4{ 1.0f }, Position)
 			 * glm::toMat4(glm::quat{ Rotation })

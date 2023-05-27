@@ -7,11 +7,11 @@
 
 namespace SnowEngine
 {
-	VkPipeline::VkPipeline(std::shared_ptr<const VkShader> shader, std::shared_ptr<const VkRenderPass> renderPass, const u32 width, const u32 height)
-		: mShader{ std::move(shader) }, mRenderPass{ std::move(renderPass) }
+	VkPipeline::VkPipeline(const PipelineSettings& settings)
+		: mShader{ std::static_pointer_cast<const VkShader>(settings.Shader) }, mRenderPass{ std::static_pointer_cast<const VkRenderPass>(settings.RenderPass) }
 	{
 		CreateLayout();
-		CreateFixedFunctions(width, height);
+		CreateFixedFunctions(settings);
 	}
 
 	void VkPipeline::Bind(const std::shared_ptr<CommandBuffer>& cmd) const
@@ -45,7 +45,7 @@ namespace SnowEngine
 		mLayout = VkCore::Get()->Device().createPipelineLayout(createInfo);
 	}
 
-	void VkPipeline::CreateFixedFunctions(const u32 width, const u32 height)
+	void VkPipeline::CreateFixedFunctions(const PipelineSettings& settings)
 	{
 		const std::vector<vk::DynamicState> dynamicStates{ vk::DynamicState::eViewport, vk::DynamicState::eScissor };
 
@@ -69,14 +69,14 @@ namespace SnowEngine
 		vk::Viewport viewport;
 		viewport.x = 0.0f;
 		viewport.y = 0.0f;
-		viewport.width = static_cast<f32>(width);
-		viewport.height = static_cast<f32>(height);
+		viewport.width = static_cast<f32>(settings.Width);
+		viewport.height = static_cast<f32>(settings.Height);
 		viewport.minDepth = 0.0f;
 		viewport.maxDepth = 1.0f;
 
 		vk::Rect2D scissor;
 		scissor.offset = vk::Offset2D{ 0, 0 };
-		scissor.extent = vk::Extent2D{ width, height };
+		scissor.extent = vk::Extent2D{ settings.Width, settings.Height };
 
 		vk::PipelineViewportStateCreateInfo viewportInfo;
 		viewportInfo.viewportCount = 1;
@@ -89,7 +89,7 @@ namespace SnowEngine
 		rasterizerInfo.rasterizerDiscardEnable = false;
 		rasterizerInfo.polygonMode = vk::PolygonMode::eFill;
 		rasterizerInfo.lineWidth = 1.0f;
-		rasterizerInfo.cullMode = vk::CullModeFlagBits::eBack;
+		rasterizerInfo.cullMode = settings.BackfaceCulling ? vk::CullModeFlagBits::eBack : vk::CullModeFlagBits::eNone;
 		rasterizerInfo.frontFace = vk::FrontFace::eCounterClockwise;
 		rasterizerInfo.depthBiasEnable = false;
 		rasterizerInfo.depthBiasConstantFactor = 0.0f;
@@ -106,7 +106,7 @@ namespace SnowEngine
 
 		vk::PipelineColorBlendAttachmentState colorBlendAttachment;
 		colorBlendAttachment.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
-			vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
+											  vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
 		colorBlendAttachment.blendEnable = false;
 		colorBlendAttachment.srcColorBlendFactor = vk::BlendFactor::eOne;
 		colorBlendAttachment.dstColorBlendFactor = vk::BlendFactor::eZero;
@@ -126,8 +126,8 @@ namespace SnowEngine
 		colorBlendInfo.blendConstants[3] = 0.0f;
 
 		vk::PipelineDepthStencilStateCreateInfo depthStencilInfo;
-		depthStencilInfo.depthTestEnable = true;
-		depthStencilInfo.depthWriteEnable = true;
+		depthStencilInfo.depthTestEnable = settings.DepthTest;
+		depthStencilInfo.depthWriteEnable = settings.DepthWrite;
 		depthStencilInfo.depthCompareOp = vk::CompareOp::eLess;
 		depthStencilInfo.depthBoundsTestEnable = false;
 		depthStencilInfo.stencilTestEnable = false;

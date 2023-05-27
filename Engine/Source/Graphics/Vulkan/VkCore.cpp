@@ -60,6 +60,8 @@ namespace SnowEngine
 
 	VmaAllocator VkCore::Allocator() const { return mAllocator; }
 
+	void VkCore::DeviceWaitIdle() const { mDevice.waitIdle(); }
+
 	void VkCore::SubmitInstantCommand(std::function<void(vk::CommandBuffer cmd)>&& command) const
 	{
 		vk::CommandBufferAllocateInfo allocInfo{};

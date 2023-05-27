@@ -8,4 +8,9 @@ namespace SnowEngine
 	{
 		return std::make_shared<VkImage>(source);
 	}
+
+	std::shared_ptr<Image> Image::Create(const std::array<std::filesystem::path, 6>& sources)
+	{
+		return std::make_shared<VkImage>(sources);
+	}
 }

@@ -16,8 +16,14 @@ namespace SnowEngine
 
 	VkImage::VkImage(const std::filesystem::path& source)
 	{
-		CreateImage(source);
+		CreateImage({ source });
 		CreateView(vk::ImageAspectFlagBits::eColor);
+	}
+
+	VkImage::VkImage(const std::array<std::filesystem::path, 6>& sources)
+	{
+		CreateImage({ sources.begin(), sources.end() });
+		CreateView(vk::ImageAspectFlagBits::eColor, static_cast<u32>(sources.size()));
 	}
 
 	VkImage::VkImage(const u32 width, const u32 height, const vk::Format format, const vk::ImageUsageFlags usage, const vk::ImageLayout layout, const vk::ImageAspectFlags aspect)
@@ -36,7 +42,7 @@ namespace SnowEngine
 
 	vk::ImageView VkImage::View() const { return mView; }
 
-	void VkImage::CreateImage(const u32 width, const u32 height, const vk::ImageUsageFlags usage, const vk::ImageLayout layout)
+	void VkImage::CreateImage(const u32 width, const u32 height, const vk::ImageUsageFlags usage, const vk::ImageLayout layout, const u32 arrayLayers)
 	{
 		vk::ImageCreateInfo createInfo{};
 		createInfo.imageType = vk::ImageType::e2D;
@@ -44,7 +50,7 @@ namespace SnowEngine
 		createInfo.extent.height = height;
 		createInfo.extent.depth = 1;
 		createInfo.mipLevels = 1;
-		createInfo.arrayLayers = 1;
+		createInfo.arrayLayers = arrayLayers;
 		createInfo.format = mFormat;
 		createInfo.tiling = vk::ImageTiling::eOptimal;
 		createInfo.initialLayout = mLayout;
@@ -52,60 +58,74 @@ namespace SnowEngine
 		createInfo.sharingMode = vk::SharingMode::eExclusive;
 		createInfo.samples = vk::SampleCountFlagBits::e1;
 
+		if (arrayLayers == 6) //TODO: argument
+			createInfo.flags = vk::ImageCreateFlagBits::eCubeCompatible;
+
 		VmaAllocationCreateInfo allocInfo{};
 		allocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
 
 		auto res = vmaCreateImage(VkCore::Get()->Allocator(), reinterpret_cast<VkImageCreateInfo*>(&createInfo), &allocInfo, reinterpret_cast<::VkImage*>(&mImage), &mAllocation, nullptr);
 
-		ChangeLayout(layout);
+		ChangeLayout(layout, arrayLayers);
 	}
 
-	void VkImage::CreateImage(const std::filesystem::path& source)
+	void VkImage::CreateImage(const std::vector<std::filesystem::path>& sources)
 	{
+		std::vector<VkBuffer> buffers;
+		buffers.reserve(sources.size());
+
 		u32 width, height;
-		auto* pixels{ LoadImage(source, &width, &height) };
-		const VkBuffer staging{ width * height * 4, vk::BufferUsageFlagBits::eTransferSrc, VMA_MEMORY_USAGE_CPU_TO_GPU };
-		staging.InsertData(pixels);
-		stbi_image_free(pixels);
+		for (u32 i{ 0 }; i < sources.size(); i++)
+		{
+			auto* pixels{ LoadImage(sources[i], &width, &height)};
+
+			buffers.emplace_back(width * height * 4, vk::BufferUsageFlagBits::eTransferSrc, VMA_MEMORY_USAGE_CPU_TO_GPU);
+			buffers.back().InsertData(pixels);
+
+			stbi_image_free(pixels);
+		}
 
 		mFormat = vk::Format::eR8G8B8A8Srgb;
-		CreateImage(width, height, vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled, vk::ImageLayout::eTransferDstOptimal);
+		CreateImage(width, height, vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled, vk::ImageLayout::eTransferDstOptimal, sources.size());
 
 		VkCore::Get()->SubmitInstantCommand([&](const vk::CommandBuffer cmd)
 		{
-			vk::BufferImageCopy region{};
-			region.bufferOffset = 0;
-			region.bufferRowLength = 0;
-			region.bufferImageHeight = 0;
-			region.imageSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
-			region.imageSubresource.mipLevel = 0;
-			region.imageSubresource.baseArrayLayer = 0;
-			region.imageSubresource.layerCount = 1;
-			region.imageOffset = vk::Offset3D{ 0, 0, 0 };
-			region.imageExtent = vk::Extent3D{ width, height, 1 };
+			for (u32 i{ 0 }; i < sources.size(); i++)
+			{
+				vk::BufferImageCopy region{};
+				region.bufferOffset = 0;
+				region.bufferRowLength = 0;
+				region.bufferImageHeight = 0;
+				region.imageSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
+				region.imageSubresource.mipLevel = 0;
+				region.imageSubresource.baseArrayLayer = i;
+				region.imageSubresource.layerCount = 1;
+				region.imageOffset = vk::Offset3D{ 0, 0, 0 };
+				region.imageExtent = vk::Extent3D{ width, height, 1 };
 
-			cmd.copyBufferToImage(staging.Buffer(), mImage, vk::ImageLayout::eTransferDstOptimal, region);
+				cmd.copyBufferToImage(buffers[i].Buffer(), mImage, vk::ImageLayout::eTransferDstOptimal, region);
+			}
 		});
 
-		ChangeLayout(vk::ImageLayout::eShaderReadOnlyOptimal);
+		ChangeLayout(vk::ImageLayout::eShaderReadOnlyOptimal, sources.size());
 	}
 
-	void VkImage::CreateView(const vk::ImageAspectFlags aspect)
+	void VkImage::CreateView(const vk::ImageAspectFlags aspect, const u32 arrayLayers)
 	{
 		vk::ImageViewCreateInfo createInfo{};
 		createInfo.image = mImage;
-		createInfo.viewType = vk::ImageViewType::e2D;
+		createInfo.viewType = arrayLayers == 6 ? vk::ImageViewType::eCube : vk::ImageViewType::e2D;//TODO: argument
 		createInfo.format = mFormat;
 		createInfo.subresourceRange.aspectMask = aspect;
 		createInfo.subresourceRange.baseMipLevel = 0;
 		createInfo.subresourceRange.levelCount = 1;
 		createInfo.subresourceRange.baseArrayLayer = 0;
-		createInfo.subresourceRange.layerCount = 1;
+		createInfo.subresourceRange.layerCount = arrayLayers;
 
 		mView = VkCore::Get()->Device().createImageView(createInfo);
 	}
 
-	void VkImage::ChangeLayout(const vk::ImageLayout newLayout)
+	void VkImage::ChangeLayout(const vk::ImageLayout newLayout, const u32 arrayLayers)
 	{
 		vk::ImageMemoryBarrier barrier{};
 		barrier.oldLayout = mLayout;
@@ -116,7 +136,7 @@ namespace SnowEngine
 		barrier.subresourceRange.baseMipLevel = 0;
 		barrier.subresourceRange.levelCount = 1;
 		barrier.subresourceRange.baseArrayLayer = 0;
-		barrier.subresourceRange.layerCount = 1;
+		barrier.subresourceRange.layerCount = arrayLayers;
 
 		vk::PipelineStageFlags sourceStage{};
 		vk::PipelineStageFlags destinationStage{};
@@ -151,7 +171,7 @@ namespace SnowEngine
 			barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eDepth;
 		}
 
-		VkCore::Get()->SubmitInstantCommand([&](vk::CommandBuffer cmd) 
+		VkCore::Get()->SubmitInstantCommand([&](const vk::CommandBuffer cmd) 
 		{
 			cmd.pipelineBarrier(sourceStage, destinationStage, {}, 0, nullptr, 0, nullptr, 1, &barrier);
 		});

@@ -14,7 +14,7 @@ namespace SnowEngine
 			glm::vec3 Rotation{ 0.0f };
 			glm::vec3 Scale{ 1.0f };
 
-			glm::mat4 Model();
+			glm::mat4 Model() const;
 		};
 
 		struct Tag

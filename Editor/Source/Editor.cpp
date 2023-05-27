@@ -27,12 +27,25 @@ namespace SnowEditor
 
 		mGui = SnowEngine::Gui::Create(mSurface, mSceneRenderer->GetRenderPass());
 
-		mSceneView.SetScene(mScene);
-		mSceneView.SetEntityView(&mEntityView);
+		mSceneView = new SceneView();
+		mEntityView = new EntityView();
+
+		mSceneView->SetScene(mScene);
+		mSceneView->SetEntityView(mEntityView);
 	}
 
 	Editor::~Editor()
 	{
+		SnowEngine::GraphicsCore::WaitIdle();
+
+		delete mSceneView;
+		delete mEntityView;
+
+		mScene.reset();
+		mSceneRenderer.reset();
+		mGui.reset();
+		mSurface.reset();
+
 		SnowEngine::GraphicsCore::Shutdown();
 	}
 
@@ -55,9 +68,9 @@ namespace SnowEditor
 			ImGui::ShowStyleEditor();
 			ImGui::ShowDemoWindow();
 
-			mSceneView.Draw();
+			mSceneView->Draw();
 
-			mEntityView.Draw();
+			mEntityView->Draw();
 
 			mGui->End(sceneBuffer);
 
