@@ -14,4 +14,6 @@ namespace ImGui
 
 	bool RoundedButton(const std::string& label, ImDrawFlags rounding = 0);
 	bool RoundedDrag(const std::string& label, float* val, ImDrawFlags rounding = 0);
+
+	void ToggleButton(const std::string& label, bool* pressed, const ImVec2& size = ImVec2(0, 0), ImDrawFlags rounding = ImDrawFlags_RoundCornersAll);
 }

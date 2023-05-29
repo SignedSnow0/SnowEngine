@@ -29,9 +29,14 @@ namespace SnowEditor
 
 		mSceneView = new SceneView();
 		mEntityView = new EntityView();
+		mLogView = new LogView();
 
 		mSceneView->SetScene(mScene);
 		mSceneView->SetEntityView(mEntityView);
+
+		LOG_DEBUG("Sas");
+		LOG_TRACE("PI: %.3f", 3.1415);
+		LOG_TRACE("PI: %.3f", 3.1415);
 	}
 
 	Editor::~Editor()
@@ -71,6 +76,8 @@ namespace SnowEditor
 			mSceneView->Draw();
 
 			mEntityView->Draw();
+
+			mLogView->Draw();
 
 			mGui->End(sceneBuffer);
 

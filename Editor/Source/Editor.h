@@ -2,6 +2,7 @@
 #include <SnowEngine.h>
 
 #include "EntityView.h"
+#include "LogView.h"
 #include "SceneView.h"
 
 namespace SnowEditor
@@ -24,5 +25,6 @@ namespace SnowEditor
 
 		SceneView* mSceneView;
 		EntityView* mEntityView;
+		LogView* mLogView;
 	};
 }

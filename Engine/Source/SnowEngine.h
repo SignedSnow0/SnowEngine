@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include "Core/Components.h"
 #include "Core/Entity.h"
+#include "Core/Logger.h"
 #include "Core/Scene.h"
 #include "Core/Window.h"
 

@@ -15,5 +15,5 @@ typedef float f32;
 typedef double f64;
 
 typedef u8 byte;
-typedef u8 b8;
+typedef bool b8;
 typedef u32 b32;

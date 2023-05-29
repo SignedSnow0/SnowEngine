@@ -10,7 +10,6 @@ namespace ImGui
 {
 	ImVector<std::pair<ImDrawListSplitter*, bool>> sGroupPanelStack;
 
-
 	bool BeginGroupPanel(const char* name, const ImVec2& size)
 	{
 		//draw foreground ad background separately
@@ -125,6 +124,8 @@ namespace ImGui
 
 	bool RoundedButton(const std::string& label, const ImDrawFlags rounding)
 	{
+		PushID(label.c_str());
+
 		ImDrawListSplitter splitter{};
 		splitter.Split(GetWindowDrawList(), 2);
 		splitter.SetCurrentChannel(GetWindowDrawList(), 1);
@@ -132,7 +133,8 @@ namespace ImGui
 		const ImVec2 startPos = GetCursorPos();
 
 		SetCursorPos(startPos + GetStyle().FramePadding);
-		Text(label.c_str());
+		if (label[0] != '#' && label[1] != '#')
+			Text(label.c_str());
 
 		SetCursorPos(startPos);
 		const bool val = InvisibleButton("##RoundedButton", ImVec2(20.0f, 20.0f));
@@ -148,6 +150,8 @@ namespace ImGui
 			GetWindowDrawList()->AddRectFilled(GetItemRectMin(), GetItemRectMax(), GetColorU32(ImGuiCol_Button), 4.0f, rounding);
 
 		splitter.Merge(GetWindowDrawList());
+
+		PopID();
 
 		return val;
 	}
@@ -180,5 +184,44 @@ namespace ImGui
 		splitter.Merge(GetWindowDrawList());
 
 		return changed;
+	}
+
+	void ToggleButton(const std::string& label, bool* pressed, const ImVec2& size, const ImDrawFlags rounding)
+	{
+		PushID(label.c_str());
+
+		ImDrawListSplitter splitter{};
+		splitter.Split(GetWindowDrawList(), 2);
+		splitter.SetCurrentChannel(GetWindowDrawList(), 1);
+
+		const ImVec2 startPos = GetCursorPos();
+
+		SetCursorPos(startPos + GetStyle().FramePadding);
+		if (label[0] != '#' && label[1] != '#')
+			Text(label.c_str());
+
+		ImVec2 buttonSize = size;
+		if (size.x == 0.0f)
+			buttonSize.x = std::min(CalcTextSize(label.c_str()).x + GetStyle().FramePadding.x * 2.0f, 20.0f);
+		if (size.y == 0.0f)
+			buttonSize.y = std::min(CalcTextSize(label.c_str()).y + GetStyle().FramePadding.y * 2.0f, 20.0f);
+
+		SetCursorPos(startPos);
+		if (InvisibleButton("##RoundedButton", buttonSize))
+			*pressed = !*pressed;
+		const bool hovered = IsItemHovered();
+		const bool active = IsItemActive();
+
+		splitter.SetCurrentChannel(GetWindowDrawList(), 0);
+		if (active)
+			GetWindowDrawList()->AddRectFilled(GetItemRectMin(), GetItemRectMax(), GetColorU32(*pressed ? ImGuiCol_Button : ImGuiCol_ButtonActive), 4.0f, rounding);
+		else if (hovered)
+			GetWindowDrawList()->AddRectFilled(GetItemRectMin(), GetItemRectMax(), GetColorU32(ImGuiCol_ButtonHovered), 4.0f, rounding);
+		else
+			GetWindowDrawList()->AddRectFilled(GetItemRectMin(), GetItemRectMax(), GetColorU32(*pressed ? ImGuiCol_ButtonActive : ImGuiCol_Button), 4.0f, rounding);
+
+		splitter.Merge(GetWindowDrawList());
+
+		PopID();
 	}
 }
