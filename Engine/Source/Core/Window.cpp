@@ -1,5 +1,7 @@
 #include "Window.h"
 
+#include "Input.h"
+
 namespace SnowEngine
 {
 	b8 Window::sGLFWInitialized{ false };
@@ -52,5 +54,33 @@ namespace SnowEngine
 
 		if (maximized)
 			glfwMaximizeWindow(mWindow);
+
+		SetCallbacks();
+	}
+
+	void Window::SetCallbacks()
+	{
+		glfwSetKeyCallback(mWindow, [](GLFWwindow* window, int key, int scancode, int action, int mods)
+		{
+			if (key == GLFW_KEY_UNKNOWN)
+				return;
+
+			Input::SetKey(static_cast<Key>(key), action != GLFW_RELEASE);
+		});
+
+		glfwSetCursorPosCallback(mWindow, [](GLFWwindow* window, double xpos, double ypos)
+		{
+			Input::SetMousePosition(static_cast<f32>(xpos), static_cast<f32>(ypos));
+		});
+
+		glfwSetMouseButtonCallback(mWindow, [](GLFWwindow* window, int button, int action, int mods)
+		{
+			Input::SetButton(static_cast<Button>(button), action != GLFW_RELEASE);
+		});
+
+		glfwSetScrollCallback(mWindow, [](GLFWwindow* window, double xoffset, double yoffset)
+		{
+			Input::SetMouseScroll(static_cast<f32>(xoffset), static_cast<f32>(yoffset));
+		});
 	}
 }

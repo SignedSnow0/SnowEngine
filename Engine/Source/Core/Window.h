@@ -26,5 +26,8 @@ namespace SnowEngine
 		GLFWwindow* mWindow{ nullptr };
 
 		static b8 sGLFWInitialized;
+
+	private:
+		void SetCallbacks();
 	};
 }
