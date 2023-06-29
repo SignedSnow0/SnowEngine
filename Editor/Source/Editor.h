@@ -4,6 +4,7 @@
 #include "EntityView.h"
 #include "LogView.h"
 #include "SceneView.h"
+#include "EditorCamera.h"
 
 namespace SnowEditor
 {
@@ -22,6 +23,8 @@ namespace SnowEditor
 		
 		std::shared_ptr<SnowEngine::SceneRenderer> mSceneRenderer{ nullptr };
 		std::shared_ptr<SnowEngine::Gui> mGui{ nullptr };
+
+		std::shared_ptr<EditorCamera> mCamera{ nullptr };
 
 		SceneView* mSceneView;
 		EntityView* mEntityView;

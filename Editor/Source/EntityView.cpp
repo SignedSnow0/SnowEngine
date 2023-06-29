@@ -20,12 +20,15 @@ namespace SnowEditor
 			DrawComponent<SnowEngine::Component::Transform>("Transform", [](SnowEngine::Component::Transform& transform)
 			{
 				ImGui::Vec3Slider("Position", transform.Position, glm::vec3(0.0f), glm::vec3(1.0f));
-				ImGui::Vec3Slider("Rotation", transform.Rotation, glm::vec3(0.0f), glm::vec3(1.0f));
+
+				//TODO: world relative
+				auto rotation = glm::degrees(transform.Rotation);
+				if (ImGui::Vec3Slider("Rotation", rotation, glm::vec3(0.0f), glm::vec3(1.0f)))
+					transform.Rotation = glm::radians(rotation);
+
 				ImGui::Vec3Slider("Scale   ", transform.Scale, glm::vec3(0.0f), glm::vec3(1.0f));
 			});
 		}
 		ImGui::End();
 	}
-
-	
 }

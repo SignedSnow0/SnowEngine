@@ -92,13 +92,22 @@ namespace SnowEngine
 
 		mSkyboxVertexBuffer = VertexBuffer::Create(sCubeVertices.data(), static_cast<u32>(sCubeVertices.size()));
 		mSkyboxIndexBuffer = IndexBuffer::Create(sCubeIndices.data(), static_cast<u32>(sCubeIndices.size()));
+
+		mCamera = std::make_shared<FirstPersonCamera>();
 	}
+
+	void SceneRenderer::SetCamera(const std::shared_ptr<CameraController>& camera) { mCamera = camera; }
 
 	const std::shared_ptr<RenderPass>& SceneRenderer::GetRenderPass() const { return mRenderPass; }
 
 	const std::shared_ptr<CommandBuffer>& SceneRenderer::GetCommandBuffer() const { return mCmdBuffer; }
 
 	void SceneRenderer::SetScene(const std::shared_ptr<Scene>& scene) { mScene = scene;	}
+
+	void SceneRenderer::Update(f32 dt)
+	{
+		mCamera->Update(dt);
+	}
 
 	void SceneRenderer::Draw(const std::shared_ptr<Surface>& surface) const
 	{
@@ -109,9 +118,8 @@ namespace SnowEngine
 		}
 		static camera{};
 
-		camera.View = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-		camera.Projection = glm::perspective(glm::radians(45.0f), mRenderPass->Width() / static_cast<f32>(mRenderPass->Height()), 0.1f, 10.0f);
-		camera.Projection[1][1] *= -1;
+		camera.View = mCamera->View();
+		camera.Projection = mCamera->Projection();
 
 		mCmdBuffer->Begin(surface->CurrentFrame());
 

@@ -19,7 +19,7 @@ namespace SnowEditor
 			if (mEntity.HasComponents<Comp>())
 			{
 				if (ImGui::BeginGroupPanel(name.c_str(), ImVec2(ImGui::GetContentRegionAvail().x, 100.0f)))
-				{
+				{				
 					auto& comp{ mEntity.GetComponents<Comp>() };
 					func(comp);
 				}

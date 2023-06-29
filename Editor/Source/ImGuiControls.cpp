@@ -92,6 +92,7 @@ namespace ImGui
 		PopStyleColor(3);
 		SameLine();
 		SetNextItemWidth(totalSize.x / 3.0f);
+
 		changed |= DragFloat("##SX", &value.x);
 		SameLine();
 		PushStyleColor(ImGuiCol_Button, SnowEngine::DarkColors::HexToSrgb(SnowEngine::DarkColors::Green));
@@ -136,6 +137,9 @@ namespace ImGui
 		if (label[0] != '#' && label[1] != '#')
 			Text(label.c_str());
 
+		const auto rectMin = GetItemRectMin() - GetStyle().FramePadding;
+		const auto rectMax = GetItemRectMax() + GetStyle().FramePadding;
+
 		SetCursorPos(startPos);
 		const bool val = InvisibleButton("##RoundedButton", ImVec2(20.0f, 20.0f));
 		const bool hovered = IsItemHovered();
@@ -143,11 +147,11 @@ namespace ImGui
 
 		splitter.SetCurrentChannel(GetWindowDrawList(), 0);
 		if (active)
-			GetWindowDrawList()->AddRectFilled(GetItemRectMin(), GetItemRectMax(), GetColorU32(ImGuiCol_ButtonActive), 4.0f, rounding);
+			GetWindowDrawList()->AddRectFilled(rectMin, rectMax, GetColorU32(ImGuiCol_ButtonActive), 4.0f, rounding);
 		else if (hovered)
-			GetWindowDrawList()->AddRectFilled(GetItemRectMin(), GetItemRectMax(), GetColorU32(ImGuiCol_ButtonHovered), 4.0f, rounding);
+			GetWindowDrawList()->AddRectFilled(rectMin, rectMax, GetColorU32(ImGuiCol_ButtonHovered), 4.0f, rounding);
 		else
-			GetWindowDrawList()->AddRectFilled(GetItemRectMin(), GetItemRectMax(), GetColorU32(ImGuiCol_Button), 4.0f, rounding);
+			GetWindowDrawList()->AddRectFilled(rectMin, rectMax, GetColorU32(ImGuiCol_Button), 4.0f, rounding);
 
 		splitter.Merge(GetWindowDrawList());
 

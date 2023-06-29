@@ -17,7 +17,7 @@ namespace SnowEditor
 	{
 		SnowEngine::GraphicsCore::Init();
 
-		mWindow = SnowEngine::Window::Create("SnowEngine", 1920, 1080);
+		mWindow = SnowEngine::Window::Create("SnowEngine", 1920, 1080, true, true, true);
 		mSurface = SnowEngine::Surface::Create(mWindow);
 
 		mScene = std::make_shared<SnowEngine::Scene>();
@@ -33,6 +33,10 @@ namespace SnowEditor
 
 		mSceneView->SetScene(mScene);
 		mSceneView->SetEntityView(mEntityView);
+
+		mCamera = std::make_shared<EditorCamera>();
+
+		mSceneRenderer->SetCamera(mCamera);
 
 		LOG_DEBUG("Sas");
 		LOG_TRACE("PI: %.3f", 3.1415);
@@ -64,6 +68,8 @@ namespace SnowEditor
 			const f32 time = std::chrono::duration<f32, std::chrono::seconds::period>(currentTime - lastTime).count();
 
 			mSurface->Begin();
+
+			mSceneRenderer->Update(time);
 
 			mSceneRenderer->Draw(mSurface);
 			auto& sceneBuffer = mSceneRenderer->GetCommandBuffer();

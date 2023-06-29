@@ -6,6 +6,7 @@
 #include "Rhi/Pipeline.h"
 #include "Rhi/RenderPass.h"
 #include "Rhi/Shader.h"
+#include "Camera.h"
 
 namespace SnowEngine
 {
@@ -14,10 +15,13 @@ namespace SnowEngine
 	public:
 		SceneRenderer(const std::shared_ptr<Surface>& surface);
 
+		void SetCamera(const std::shared_ptr<CameraController>& camera);
+
 		const std::shared_ptr<RenderPass>& GetRenderPass() const;
 		const std::shared_ptr<CommandBuffer>& GetCommandBuffer() const;
 		void SetScene(const std::shared_ptr<Scene>& scene);
 
+		void Update(f32 dt);
 		void Draw(const std::shared_ptr<Surface>& surface) const;
 
 	private:
@@ -33,6 +37,8 @@ namespace SnowEngine
 		std::shared_ptr<DescriptorSet> mSkyboxDescriptorSet{ nullptr };
 		std::shared_ptr<VertexBuffer> mSkyboxVertexBuffer{ nullptr };
 		std::shared_ptr<IndexBuffer> mSkyboxIndexBuffer{ nullptr };
+
+		std::shared_ptr<CameraController> mCamera{};
 
 		std::shared_ptr<Scene> mScene;
 	};

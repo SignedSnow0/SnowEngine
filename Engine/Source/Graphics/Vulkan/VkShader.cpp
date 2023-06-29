@@ -8,12 +8,13 @@
 
 namespace SnowEngine
 {
+
 	static std::string ReadFile(const std::filesystem::path& path)
 	{
 		std::ifstream file{ path, std::ios::ate | std::ios::binary };
 		if (!file.is_open())
 			return "";
-
+		
 		const u64 fileSize{ static_cast<u64>(file.tellg()) };
 		std::string buffer(fileSize, ' ');
 
